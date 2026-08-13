@@ -121,15 +121,16 @@ export function computeGridColumns(
   minItemWidth: number,
   gap: number,
 ): number {
-  if (width <= 0) return 1;
-  return Math.max(
-    1,
-    Math.floor(
-      (Math.max(width - gap * 2, minItemWidth) + gap) / (minItemWidth + gap),
-    ),
-  );
-}
+  if (width <= 0 || minItemWidth <= 0) {
+    return 1;
+  }
 
+  const safeGap = Math.max(0, gap);
+
+  const columns = Math.floor((width + safeGap) / (minItemWidth + safeGap));
+
+  return Math.max(1, columns);
+}
 /**
  * Smooth CSS clamp()-style interpolation: `minValue` at `minWidth` and below,
  * `maxValue` at `maxWidth` and above, linearly interpolated in between.
