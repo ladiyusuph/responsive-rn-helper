@@ -46,4 +46,4 @@ example
 credentials.json
 
 # coverage
-/coverage   
+coverage/*
