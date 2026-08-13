@@ -1,4 +1,4 @@
-# @responsive-rn
+# @ladiyusuph/rn-ui v0.2
 
 Responsive helpers for Expo/React Native.
 
