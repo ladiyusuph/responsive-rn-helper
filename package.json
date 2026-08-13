@@ -1,6 +1,6 @@
 {
   "name": "@ladiyusuph/responsive-rn",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "Responsive layout helpers (breakpoints, spacing, typography, grid/row/container components) for Expo and React Native.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
