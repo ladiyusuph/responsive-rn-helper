@@ -1,135 +1,156 @@
-# @ladiyusuph/rn-ui v0.2
+# @ladiyusuph/responsive-rn
 
-Responsive helpers for Expo/React Native.
+Responsive layout helpers for Expo and React Native: breakpoints, spacing, typography, radii, layout tokens, fluid values, grid/row/container components, and breakpoint-aware rendering.
 
-## Core rule
-
-Do not scale every pixel.
-
-Use Flexbox for fluid width, fixed dimensions for deliberately fixed components, breakpoints for structural changes, and `clamp()` for bounded fluid values.
-
-### App setup
+## Setup
 
 ```tsx
-import { ResponsiveProvider } from "@thecodeunit/responsive-rn";
+import { ResponsiveProvider } from "@ladiyusuph/responsive-rn";
 
-<ResponsiveProvider breakpoints={{ smallPhone: 360, phone: 600, tablet: 840 }}>
-  <App />
-</ResponsiveProvider>;
+export default function App() {
+  return (
+    <ResponsiveProvider>
+      <YourApp />
+    </ResponsiveProvider>
+  );
+}
 ```
 
-### Screen
+The package defaults are defaults, not React Native standards. They can be overridden by each application.
+
+## Configure your design system
+
+Use one `config` object when you want all responsive design decisions in one place:
 
 ```tsx
-const layout = useLayout();
-const spacing = useResponsiveSpacing();
-const typography = useResponsiveTypography();
-
-<ResponsiveContainer>
-  <CustomText style={{ fontSize: typography.xl }}>Example Text</CustomText>
-
-  <ResponsiveRow>
-    <StatCard style={{ flex: 1 }} />
-    <StatCard style={{ flex: 1 }} />
-  </ResponsiveRow>
-</ResponsiveContainer>;
-```
-
-### Cards
-
-If a card is intentionally 120px high:
-
-```tsx
-<View
-  style={{
-    height: 120,
-    padding: layout.cardPadding,
-    borderRadius: layout.borderRadius,
+<ResponsiveProvider
+  config={{
+    breakpoints: {
+      smallPhone: 375,
+      phone: 600,
+      tablet: 900,
+    },
+    spacing: {
+      screen: { small: 12, phone: 20, tablet: 28, largeTablet: 36 },
+      card: { small: 12, phone: 16, tablet: 20, largeTablet: 24 },
+    },
+    typography: {
+      md: { small: 14, phone: 15, tablet: 16, largeTablet: 17 },
+      xxl: { small: 20, phone: 22, tablet: 26, largeTablet: 30 },
+    },
+    radii: {
+      md: { small: 8, phone: 10, tablet: 12, largeTablet: 14 },
+    },
+    layout: {
+      buttonHeight: {
+        minWidth: 320,
+        maxWidth: 1000,
+        minValue: 48,
+        maxValue: 58,
+      },
+    },
   }}
 >
-  ...
-</View>
+  <YourApp />
+</ResponsiveProvider>
 ```
 
-Do NOT replace deliberate fixed height with `minHeight` unless growth is desired.
+Nested responsive values are deep-merged with the defaults, so you only need to provide values you want to change.
 
-### Migration
-
-Instead of:
+For convenience, the same configuration sections can be supplied directly:
 
 ```tsx
-width: scale(160);
+<ResponsiveProvider
+  breakpoints={{ phone: 640, tablet: 900 }}
+  spacing={{ screen: { phone: 20, tablet: 28 } }}
+  typography={{ xxl: { phone: 22, tablet: 28 } }}
+  radii={{ lg: { phone: 14, tablet: 16 } }}
+  layout={{ actionColumns: { phone: 2, tablet: 3, largeTablet: 4 } }}
+>
+  <YourApp />
+</ResponsiveProvider>
 ```
 
-prefer:
+If both `config` and direct props are provided, direct props take precedence.
+
+## Hooks
+
+### `useLayout()`
 
 ```tsx
-flex: 1;
+const {
+  horizontalPadding,
+  contentMaxWidth,
+  gap,
+  sectionGap,
+  cardPadding,
+  borderRadius,
+  actionColumns,
+  statColumns,
+  buttonHeight,
+} = useLayout();
 ```
 
-when the item should share available width.
-
-Instead of:
+### `useResponsiveSpacing()`
 
 ```tsx
-height: verticalScale(120);
+const spacing = useResponsiveSpacing();
+
+<View style={{ paddingHorizontal: spacing.screen, gap: spacing.gap }} />;
 ```
 
-use:
+### `useResponsiveTypography()`
 
 ```tsx
-height: 120;
+const typography = useResponsiveTypography();
+
+<Text style={{ fontSize: typography.xxl }}>Dashboard</Text>;
 ```
 
-when the visual height is intentional.
-
-Instead of:
+### `useResponsiveRadii()`
 
 ```tsx
-fontSize: moderateScale(22);
+const radii = useResponsiveRadii();
+
+<View style={{ borderRadius: radii.md }} />;
 ```
 
-use a semantic typography token such as:
+### `useResponsiveValue()`
+
+Use for discrete breakpoint changes:
 
 ```tsx
-fontSize: typography.xl;
+const padding = useResponsiveValue(
+  { small: 12, phone: 16, tablet: 24, largeTablet: 32 },
+  16,
+);
 ```
 
-### Fluid values
+### `useFluidValue()`
 
-For a value that should scale continuously instead of jumping between tiers
-— the direct equivalent of CSS `clamp()`:
+Use for smooth interpolation:
 
 ```tsx
-const heading = useFluidValue(20, 32); // 20px at smallPhone width, 32px at tablet width, interpolated in between
-const cardPadding = useFluidValue(12, 24, { minWidth: 320, maxWidth: 900 });
+const titleSize = useFluidValue(20, 32);
 ```
 
-### Show / hide by breakpoint
+## Components
 
-```tsx
-<ResponsiveShow above="tablet">
-  <Sidebar />
-</ResponsiveShow>
+- `ResponsiveContainer`
+- `ResponsiveRow`
+- `ResponsiveGrid`
+- `ResponsiveShow`
+- `ResponsiveHide`
+- `ResponsiveDebugOverlay`
 
-<ResponsiveHide below="tablet">
-  <DesktopOnlyToolbar />
-</ResponsiveHide>
+## Design philosophy
 
-<ResponsiveShow only={["phone", "small-phone"]}>
-  <BottomTabBar />
-</ResponsiveShow>
-```
+The package separates responsive mechanics from application design decisions:
 
-`above`/`below` are inclusive of the named tier and combine as a range. `only`
-overrides both.
+- Breakpoints decide when the layout changes.
+- Responsive tokens decide what values are used at each tier.
+- Flexbox decides how content fills available space.
+- `useResponsiveValue()` handles discrete breakpoint changes.
+- `useFluidValue()` handles smooth interpolation.
 
-### Debug overlay
-
-Drop this anywhere near the root of your app during development to see the
-live width/height and breakpoint tier on screen. It renders nothing outside
-`__DEV__` unless you pass `forceShow`:
-
-```tsx
-<ResponsiveDebugOverlay position="bottom-right" />
-```
+The package's defaults are intentionally overridable so applications can establish their own design system without editing the library source.
