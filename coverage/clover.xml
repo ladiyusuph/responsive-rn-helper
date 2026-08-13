@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1786622661121" clover="3.2.0">
-  <project timestamp="1786622661121" name="All files">
+<coverage generated="1786623524757" clover="3.2.0">
+  <project timestamp="1786623524757" name="All files">
     <metrics statements="167" coveredstatements="167" conditionals="82" coveredconditionals="81" methods="7" coveredmethods="7" elements="256" coveredelements="255" complexity="0" loc="167" ncloc="167" packages="1" files="2" classes="2"/>
     <file name="constants.ts" path="/Users/mac/trenches/thecodeunit-responsive-rn-full/src/responsive/constants.ts">
       <metrics statements="15" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>

@@ -44,3 +44,6 @@ example
 
 # generated files
 credentials.json
+
+# coverage
+/coverage   

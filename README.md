@@ -1,4 +1,4 @@
-# @thecodeunit/rn-ui v0.2
+# @responsive-rn
 
 Responsive helpers for Expo/React Native.
 
