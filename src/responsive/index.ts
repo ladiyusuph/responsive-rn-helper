@@ -6,6 +6,7 @@ export * from "./hooks/useResponsive";
 export * from "./hooks/useResponsiveValue";
 export * from "./hooks/useResponsiveSpacing";
 export * from "./hooks/useResponsiveTypography";
+export * from "./hooks/useResponsiveRadii";
 export * from "./hooks/useLayout";
 export * from "./hooks/useFluidValue";
 export * from "./components/ResponsiveContainer";

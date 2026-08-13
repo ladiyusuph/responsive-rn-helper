@@ -1,10 +1,12 @@
+import { useResponsiveConfig } from "../context/ResponsiveProvider";
 import { useResponsiveValue } from "./useResponsiveValue";
 
 export function useResponsiveSpacing() {
+  const { spacing } = useResponsiveConfig();
   return {
-    screen: useResponsiveValue({ small: 12, phone: 16, tablet: 24, largeTablet: 32 }, 16),
-    section: useResponsiveValue({ small: 16, phone: 20, tablet: 24, largeTablet: 32 }, 20),
-    card: useResponsiveValue({ small: 12, phone: 16, tablet: 20, largeTablet: 24 }, 16),
-    gap: useResponsiveValue({ small: 8, phone: 12, tablet: 16, largeTablet: 20 }, 12),
+    screen: useResponsiveValue(spacing.screen, 16),
+    section: useResponsiveValue(spacing.section, 20),
+    card: useResponsiveValue(spacing.card, 16),
+    gap: useResponsiveValue(spacing.gap, 12),
   };
 }

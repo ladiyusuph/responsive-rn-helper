@@ -1,4 +1,12 @@
-import type { Breakpoints, BreakpointCondition, DeviceType, FluidConfig, ResponsiveValues } from "./types";
+import { DEFAULT_BREAKPOINTS, DEFAULT_LAYOUT } from "./constants";
+import type {
+  Breakpoints,
+  BreakpointCondition,
+  DeviceType,
+  FluidConfig,
+  LayoutConfig,
+  ResponsiveValues,
+} from "./types";
 
 export function responsiveValue<T>(
   width: number,
@@ -47,9 +55,13 @@ export function computeBreakpointFlags(
   const isLargeTablet = width >= breakpoints.tablet;
 
   const deviceType: DeviceType =
-    width < breakpoints.smallPhone ? "small-phone" :
-    width < breakpoints.phone ? "phone" :
-    width < breakpoints.tablet ? "tablet" : "large-tablet";
+    width < breakpoints.smallPhone
+      ? "small-phone"
+      : width < breakpoints.phone
+        ? "phone"
+        : width < breakpoints.tablet
+          ? "tablet"
+          : "large-tablet";
 
   return {
     isSmallPhone,
@@ -78,19 +90,25 @@ export type LayoutTokens = {
  * that has a large-tablet value must check isLargeTablet BEFORE isTablet,
  * since isTablet stays true for large tablets too (see BreakpointFlags).
  */
-export function computeLayoutTokens(flags: BreakpointFlags, width: number): LayoutTokens {
-  const { isSmallPhone, isPhone, isTablet, isLargeTablet } = flags;
+export function computeLayoutTokens(
+  _flags: BreakpointFlags,
+  width: number,
+  layout: LayoutConfig = DEFAULT_LAYOUT,
+  breakpoints: Breakpoints = DEFAULT_BREAKPOINTS,
+): LayoutTokens {
+  const resolve = <T>(values: ResponsiveValues<T>, fallback: T): T =>
+    responsiveValue(width, values, fallback, breakpoints);
 
   return {
-    horizontalPadding: isSmallPhone ? 12 : isPhone ? 16 : isLargeTablet ? 32 : isTablet ? 24 : 12,
-    contentMaxWidth: isLargeTablet ? 1000 : isTablet ? 800 : undefined,
-    gap: isSmallPhone ? 8 : isPhone ? 12 : isLargeTablet ? 20 : 16,
-    sectionGap: isSmallPhone ? 16 : isPhone ? 20 : isLargeTablet ? 28 : 24,
-    cardPadding: isSmallPhone ? 12 : isPhone ? 16 : isLargeTablet ? 24 : 20,
-    borderRadius: isSmallPhone ? 16 : isPhone ? 20 : 24,
-    actionColumns: isSmallPhone ? 1 : isLargeTablet ? 3 : 2,
-    statColumns: isSmallPhone ? 1 : isLargeTablet ? 4 : 2,
-    buttonHeight: clamp(width * 0.14, 48, 56),
+    horizontalPadding: resolve(layout.horizontalPadding, 16),
+    contentMaxWidth: resolve(layout.contentMaxWidth, undefined),
+    gap: resolve(layout.gap, 12),
+    sectionGap: resolve(layout.sectionGap, 20),
+    cardPadding: resolve(layout.cardPadding, 16),
+    borderRadius: resolve(layout.borderRadius, 20),
+    actionColumns: resolve(layout.actionColumns, 2),
+    statColumns: resolve(layout.statColumns, 2),
+    buttonHeight: fluidValue(width, layout.buttonHeight),
   };
 }
 
@@ -98,11 +116,17 @@ export function computeLayoutTokens(flags: BreakpointFlags, width: number): Layo
  * Pure column-count calculation for ResponsiveGrid, given the width actually
  * available to the grid (not necessarily the device/screen width).
  */
-export function computeGridColumns(width: number, minItemWidth: number, gap: number): number {
+export function computeGridColumns(
+  width: number,
+  minItemWidth: number,
+  gap: number,
+): number {
   if (width <= 0) return 1;
   return Math.max(
     1,
-    Math.floor((Math.max(width - gap * 2, minItemWidth) + gap) / (minItemWidth + gap)),
+    Math.floor(
+      (Math.max(width - gap * 2, minItemWidth) + gap) / (minItemWidth + gap),
+    ),
   );
 }
 
@@ -123,7 +147,12 @@ export function fluidValue(width: number, config: FluidConfig): number {
   return minValue + progress * (maxValue - minValue);
 }
 
-const DEVICE_TYPE_ORDER: DeviceType[] = ["small-phone", "phone", "tablet", "large-tablet"];
+const DEVICE_TYPE_ORDER: DeviceType[] = [
+  "small-phone",
+  "phone",
+  "tablet",
+  "large-tablet",
+];
 
 /**
  * Pure matcher behind ResponsiveShow/ResponsiveHide. `only` takes precedence
@@ -134,7 +163,9 @@ export function matchesBreakpointCondition(
   condition: BreakpointCondition,
 ): boolean {
   if (condition.only !== undefined) {
-    const only = Array.isArray(condition.only) ? condition.only : [condition.only];
+    const only = Array.isArray(condition.only)
+      ? condition.only
+      : [condition.only];
     return only.includes(deviceType);
   }
 
