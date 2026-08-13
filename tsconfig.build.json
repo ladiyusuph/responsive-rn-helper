@@ -5,6 +5,7 @@
     "rootDir": "src",
     "module": "commonjs",
     "target": "es2019",
+    "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
