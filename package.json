@@ -1,0 +1,42 @@
+{
+  "name": "@thecodeunit/responsive-rn",
+  "version": "0.2.0",
+  "description": "Responsive layout helpers (breakpoints, spacing, typography, grid/row/container components) for Expo and React Native.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "jest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "responsive",
+    "breakpoints",
+    "layout",
+    "typography",
+    "ui"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/react": "^18.2.79",
+    "jest": "^30.4.2",
+    "react": "^18.2.0",
+    "react-native": "^0.74.0",
+    "ts-jest": "^29.4.12",
+    "typescript": "^5.4.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "commonjs",
+    "target": "es2019",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "noEmitOnError": true
+  },
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+}
