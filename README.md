@@ -13,11 +13,9 @@ Use Flexbox for fluid width, fixed dimensions for deliberately fixed components,
 ```tsx
 import { ResponsiveProvider } from "@thecodeunit/responsive-rn";
 
-<ResponsiveProvider
-  breakpoints={{ smallPhone: 360, phone: 600, tablet: 840 }}
->
+<ResponsiveProvider breakpoints={{ smallPhone: 360, phone: 600, tablet: 840 }}>
   <App />
-</ResponsiveProvider>
+</ResponsiveProvider>;
 ```
 
 ### Screen
@@ -28,15 +26,13 @@ const spacing = useResponsiveSpacing();
 const typography = useResponsiveTypography();
 
 <ResponsiveContainer>
-  <CustomText style={{ fontSize: typography.heading }}>
-    GJSS HUNKUYI
-  </CustomText>
+  <CustomText style={{ fontSize: typography.xl }}>Example Text</CustomText>
 
   <ResponsiveRow>
     <StatCard style={{ flex: 1 }} />
     <StatCard style={{ flex: 1 }} />
   </ResponsiveRow>
-</ResponsiveContainer>
+</ResponsiveContainer>;
 ```
 
 ### Cards
@@ -44,11 +40,13 @@ const typography = useResponsiveTypography();
 If a card is intentionally 120px high:
 
 ```tsx
-<View style={{
-  height: 120,
-  padding: layout.cardPadding,
-  borderRadius: layout.borderRadius,
-}}>
+<View
+  style={{
+    height: 120,
+    padding: layout.cardPadding,
+    borderRadius: layout.borderRadius,
+  }}
+>
   ...
 </View>
 ```
@@ -60,13 +58,13 @@ Do NOT replace deliberate fixed height with `minHeight` unless growth is desired
 Instead of:
 
 ```tsx
-width: scale(160)
+width: scale(160);
 ```
 
 prefer:
 
 ```tsx
-flex: 1
+flex: 1;
 ```
 
 when the item should share available width.
@@ -74,13 +72,13 @@ when the item should share available width.
 Instead of:
 
 ```tsx
-height: verticalScale(120)
+height: verticalScale(120);
 ```
 
 use:
 
 ```tsx
-height: 120
+height: 120;
 ```
 
 when the visual height is intentional.
@@ -88,13 +86,13 @@ when the visual height is intentional.
 Instead of:
 
 ```tsx
-fontSize: moderateScale(22)
+fontSize: moderateScale(22);
 ```
 
 use a semantic typography token such as:
 
 ```tsx
-fontSize: typography.heading
+fontSize: typography.xl;
 ```
 
 ### Fluid values
@@ -135,4 +133,3 @@ live width/height and breakpoint tier on screen. It renders nothing outside
 ```tsx
 <ResponsiveDebugOverlay position="bottom-right" />
 ```
-

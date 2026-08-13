@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "target": "es2019",
+    "lib": ["es2019"],
     "strict": true,
     "jsx": "react-native",
     "moduleResolution": "node",

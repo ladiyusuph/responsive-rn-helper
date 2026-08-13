@@ -1,5 +1,5 @@
 {
-  "name": "@thecodeunit/responsive-rn",
+  "name": "@ladiyusuph/responsive-rn",
   "version": "0.2.0",
   "description": "Responsive layout helpers (breakpoints, spacing, typography, grid/row/container components) for Expo and React Native.",
   "main": "dist/index.js",
@@ -34,6 +34,7 @@
     "react": "^18.2.0",
     "react-native": "^0.74.0",
     "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
   "publishConfig": {
