@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "lib": ["es2019"],
+    "target": "es2020",
+    "lib": ["es2020"],
     "strict": true,
     "jsx": "react-native",
+     "ignoreDeprecations": "6.0",
     "moduleResolution": "node",
     "types": ["jest"],
     "skipLibCheck": true,
