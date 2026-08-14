@@ -13,6 +13,14 @@ export type ResponsiveValues<T> = {
   largeTablet?: T;
 };
 
+export type ResponsiveSizeValuesConfig<T> = {
+  xs: ResponsiveValues<T>;
+  sm: ResponsiveValues<T>;
+  md: ResponsiveValues<T>;
+  lg: ResponsiveValues<T>;
+  xl: ResponsiveValues<T>;
+};
+
 export type FluidConfig = {
   minWidth: number;
   maxWidth: number;
@@ -50,6 +58,9 @@ export type LayoutConfig = {
   actionColumns: ResponsiveValues<number>;
   statColumns: ResponsiveValues<number>;
   buttonHeight: FluidConfig;
+  inputHeight: ResponsiveValues<number>;
+  inputPaddingHorizontal: ResponsiveValues<number>;
+  iconSize: ResponsiveSizeValuesConfig<number>;
 };
 
 export type ResponsiveConfig = {

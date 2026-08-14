@@ -83,6 +83,15 @@ export type LayoutTokens = {
   actionColumns: number;
   statColumns: number;
   buttonHeight: number;
+  inputHeight: number;
+  inputPaddingHorizontal: number;
+  iconSize: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+  };
 };
 
 /**
@@ -101,14 +110,38 @@ export function computeLayoutTokens(
 
   return {
     horizontalPadding: resolve(layout.horizontalPadding, 16),
+
     contentMaxWidth: resolve(layout.contentMaxWidth, undefined),
+
     gap: resolve(layout.gap, 12),
+
     sectionGap: resolve(layout.sectionGap, 20),
+
     cardPadding: resolve(layout.cardPadding, 16),
+
     borderRadius: resolve(layout.borderRadius, 20),
+
     actionColumns: resolve(layout.actionColumns, 2),
+
     statColumns: resolve(layout.statColumns, 2),
+
     buttonHeight: fluidValue(width, layout.buttonHeight),
+
+    inputHeight: resolve(layout.inputHeight ?? {}, 46),
+
+    inputPaddingHorizontal: resolve(layout.inputPaddingHorizontal ?? {}, 14),
+
+    iconSize: {
+      xs: resolve(layout.iconSize.xs, 14),
+
+      sm: resolve(layout.iconSize.sm, 18),
+
+      md: resolve(layout.iconSize.md, 22),
+
+      lg: resolve(layout.iconSize.lg, 26),
+
+      xl: resolve(layout.iconSize.xl, 30),
+    },
   };
 }
 
