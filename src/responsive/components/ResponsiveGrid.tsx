@@ -5,28 +5,9 @@ import { computeGridColumns } from "../utils";
 
 type ResponsiveGridProps = ViewProps & {
   children: React.ReactNode;
-
-  /**
-   * Minimum width each grid item should have.
-   * @default 160
-   */
   minItemWidth?: number;
-
-  /**
-   * Horizontal and vertical spacing between grid items.
-   * @default 12
-   */
   gap?: number;
-
-  /**
-   * Maximum number of columns the grid is allowed to display.
-   */
   maxColumns?: number;
-
-  /**
-   * Minimum number of columns the grid should display.
-   * @default 1
-   */
   minColumns?: number;
 
   /**
@@ -50,12 +31,17 @@ export function ResponsiveGrid({
   ...props
 }: ResponsiveGridProps) {
   const { width: screenWidth } = useResponsive();
+
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
 
   const width = measuredWidth ?? screenWidth;
 
+  /**
+   * Determine how many columns can fit.
+   */
   const columns = useMemo(() => {
     const calculated = computeGridColumns(width, minItemWidth, gap);
+
     const withMinimum = Math.max(calculated, minColumns);
 
     return maxColumns === undefined
@@ -64,13 +50,22 @@ export function ResponsiveGrid({
   }, [width, minItemWidth, gap, minColumns, maxColumns]);
 
   /**
-   * Width available for each grid cell after accounting for
-   * the gaps between columns.
+   * Exact width of each normal grid cell.
+   *
+   * Example:
+   *
+   * width = 393
+   * columns = 2
+   * gap = 12
+   *
+   * (393 - 12) / 2 = 190.5
    */
   const cellWidth = useMemo(() => {
-    if (columns <= 0) return 0;
+    if (columns <= 0) {
+      return 0;
+    }
 
-    return Math.floor((width - gap * (columns - 1)) / columns);
+    return (width - gap * (columns - 1)) / columns;
   }, [width, gap, columns]);
 
   const handleLayout = useCallback(
@@ -108,7 +103,9 @@ export function ResponsiveGrid({
           width: "100%",
           flexDirection: "row",
           flexWrap: "wrap",
-          marginHorizontal: -gap / 2,
+
+          columnGap: gap,
+          rowGap: gap,
         },
         style,
       ]}
@@ -122,11 +119,10 @@ export function ResponsiveGrid({
           <View
             key={child.key ?? index}
             style={{
-              flexBasis: cellWidth,
+              width: shouldGrow ? undefined : cellWidth,
+
               flexGrow: shouldGrow ? 1 : 0,
               flexShrink: 0,
-              paddingHorizontal: gap / 2,
-              marginBottom: gap,
             }}
           >
             {child}
