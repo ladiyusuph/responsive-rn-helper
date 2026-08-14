@@ -7,12 +7,12 @@ Build adaptive interfaces with configurable breakpoints, responsive design token
 ## Features
 
 - Configurable responsive breakpoints
-- Responsive spacing, typography, and radii
+- Responsive spacing, typography, radii, and icons
 - Responsive design tokens
 - Fluid values that scale smoothly with screen width
 - Responsive containers
 - Responsive rows
-- Constraint-based responsive grids
+- Constraint-based responsive grids (with trailing row expansion)
 - Breakpoint-aware rendering
 - Responsive debug overlay
 - Application-level configuration
@@ -24,12 +24,14 @@ Build adaptive interfaces with configurable breakpoints, responsive design token
 
 ```bash
 npm install @ladiyusuph/responsive-rn
-````
+
+```
 
 or:
 
 ```bash
 yarn add @ladiyusuph/responsive-rn
+
 ```
 
 The package requires `react` and `react-native` as peer dependencies.
@@ -63,10 +65,10 @@ The package provides sensible defaults for common responsive layouts.
 ### Default breakpoints
 
 | Breakpoint   | Default width |
-| ------------ | ------------: |
-| `smallPhone` |         `360` |
-| `phone`      |         `600` |
-| `tablet`     |         `840` |
+| ------------ | ------------- |
+| `smallPhone` | `360`         |
+| `phone`      | `600`         |
+| `tablet`     | `840`         |
 
 These values are layout thresholds, not device classifications.
 
@@ -74,7 +76,7 @@ These values are layout thresholds, not device classifications.
 
 # Configuration
 
-You can configure your responsive system through a single `config` object.
+You can configure your responsive system through a single `config` object. Configuration values are deep-merged with the package defaults, so you only need to provide the values you want to change.
 
 ```tsx
 <ResponsiveProvider
@@ -84,35 +86,30 @@ You can configure your responsive system through a single `config` object.
       phone: 600,
       tablet: 900,
     },
-
     spacing: {
       screen: {
         small: 12,
         phone: 20,
         tablet: 28,
       },
-
       card: {
         small: 12,
         phone: 16,
         tablet: 20,
       },
     },
-
     typography: {
       md: {
         small: 14,
         phone: 15,
         tablet: 16,
       },
-
       xxl: {
         small: 20,
         phone: 22,
         tablet: 26,
       },
     },
-
     radii: {
       md: {
         small: 8,
@@ -120,7 +117,6 @@ You can configure your responsive system through a single `config` object.
         tablet: 12,
       },
     },
-
     layout: {
       buttonHeight: {
         minWidth: 320,
@@ -135,123 +131,83 @@ You can configure your responsive system through a single `config` object.
 </ResponsiveProvider>
 ```
 
-Configuration values are deep-merged with the package defaults, so you only need to provide the values you want to change.
-
 ## Direct configuration
 
-Configuration sections can also be supplied directly:
-
-```tsx
-<ResponsiveProvider
-  breakpoints={{
-    phone: 640,
-    tablet: 900,
-  }}
-  spacing={{
-    screen: {
-      phone: 20,
-      tablet: 28,
-    },
-  }}
-  typography={{
-    xxl: {
-      phone: 22,
-      tablet: 28,
-    },
-  }}
-  radii={{
-    lg: {
-      phone: 14,
-      tablet: 16,
-    },
-  }}
-  layout={{
-    actionColumns: {
-      phone: 2,
-      tablet: 3,
-    },
-  }}
->
-  <YourApp />
-</ResponsiveProvider>
-```
-
-If both `config` and direct props are provided, **direct props take precedence**.
+Configuration sections can also be supplied directly as props on the provider. If both `config` and direct props are provided, **direct props take precedence**.
 
 ---
 
 # Hooks
 
-## `useLayout()`
+## `useLayout()` (Recommended)
 
-Provides responsive layout state and calculated layout tokens.
+`useLayout` is the primary convenience API for building components. Instead of calling individual token hooks, it provides a centralized object containing all your current responsive layout tokens, spacing, radii, typography, and icons.
 
 ```tsx
-const {
-  horizontalPadding,
-  contentMaxWidth,
-  gap,
-  sectionGap,
-  cardPadding,
-  borderRadius,
-  actionColumns,
-  statColumns,
-  buttonHeight,
-} = useLayout();
+import { useLayout } from "@ladiyusuph/responsive-rn";
+
+export function CustomCard() {
+  const layout = useLayout();
+
+  return (
+    <View "white", backgroundColor: borderRadius: gap: layout.gap, layout.radii.xl, layout.spacing.card, padding: style="{{" }}>
+      <Icon name="person" size="{layout.icons.md}"/>
+      <Text fontSize: layout.typography.md style="{{" }}>
+        Profile
+      </Text>
+    </View>
+  );
+}
+
 ```
 
 ---
 
-## `useResponsiveSpacing()`
+## Individual Token Hooks
+
+If you prefer to extract specific domains or are optimizing component re-renders, you can use the individual hooks:
+
+### `useResponsiveSpacing()`
 
 Access responsive spacing tokens:
 
 ```tsx
 const spacing = useResponsiveSpacing();
-
-return (
-  <View
-    style={{
-      paddingHorizontal: spacing.screen,
-      gap: spacing.gap,
-    }}
-  />
-);
+// spacing.screen, spacing.card, spacing.gap...
 ```
 
----
-
-## `useResponsiveTypography()`
+### `useResponsiveTypography()`
 
 Access responsive typography values:
 
 ```tsx
 const typography = useResponsiveTypography();
-
-return (
-  <Text style={{ fontSize: typography.xxl }}>
-    Dashboard
-  </Text>
-);
+// typography.md, typography.xxl...
 ```
 
----
-
-## `useResponsiveRadii()`
+### `useResponsiveRadii()`
 
 Access responsive border-radius values:
 
 ```tsx
 const radii = useResponsiveRadii();
+// radii.md, radii.xl...
+```
 
-return (
-  <View style={{ borderRadius: radii.md }} />
-);
+### `useResponsiveIconSizes()`
+
+Access responsive icon size tokens:
+
+```tsx
+const icons = useResponsiveIconSizes();
+// icons.md, icons.lg...
 ```
 
 ---
 
-## `useResponsiveValue()`
+## Dynamic Value Hooks
+
+### `useResponsiveValue()`
 
 Use when a value should change discretely between breakpoints.
 
@@ -266,9 +222,7 @@ const padding = useResponsiveValue(
 );
 ```
 
----
-
-## `useFluidValue()`
+### `useFluidValue()`
 
 Use when a value should scale smoothly rather than jump between breakpoints.
 
@@ -276,14 +230,7 @@ Use when a value should scale smoothly rather than jump between breakpoints.
 const titleSize = useFluidValue(20, 32);
 ```
 
-Useful for:
-
-* Font sizes
-* Spacing
-* Component dimensions
-* Other values that benefit from smooth scaling
-
-Unlike `useResponsiveValue()`, `useFluidValue()` interpolates between the minimum and maximum values.
+Unlike `useResponsiveValue()`, `useFluidValue()` interpolates dynamically between the minimum and maximum values as the screen resizes.
 
 ---
 
@@ -299,8 +246,6 @@ Provides a centered content area with responsive horizontal padding and an optio
 </ResponsiveContainer>
 ```
 
-Useful for preventing content from becoming excessively wide on tablets and larger screens.
-
 ---
 
 ## `ResponsiveRow`
@@ -308,7 +253,7 @@ Useful for preventing content from becoming excessively wide on tablets and larg
 Provides a horizontal layout that can automatically stack its children vertically on small phones.
 
 ```tsx
-<ResponsiveRow gap={16}>
+<ResponsiveRow gap="{16}">
   <Button title="Cancel" />
   <Button title="Continue" />
 </ResponsiveRow>
@@ -319,49 +264,19 @@ By default:
 ```text
 Small phone → column
 Phone+      → row
+
 ```
-
-### Disable stacking
-
-```tsx
-<ResponsiveRow stackOnSmall={false}>
-  <Button title="Cancel" />
-  <Button title="Continue" />
-</ResponsiveRow>
-```
-
-### Custom spacing
-
-```tsx
-<ResponsiveRow gap={24}>
-  <Button title="Cancel" />
-  <Button title="Continue" />
-</ResponsiveRow>
-```
-
-If `gap` is omitted, the component uses the responsive layout gap from your configuration.
 
 ---
 
 ## `ResponsiveGrid`
 
-Automatically determines how many columns can fit based on the **actual width available to the grid**.
-
-Unlike a breakpoint-based grid, it does not rely only on screen width.
-
-This makes it useful inside:
-
-* `ResponsiveContainer`
-* Cards
-* Modals
-* Split views
-* Side panels
-* Other constrained layouts
+Automatically determines how many columns can fit based on the **actual width available to the grid**. Unlike a breakpoint-based grid, it does not rely only on screen width, making it perfect for nested containers, cards, split views, and side panels.
 
 ### Basic usage
 
 ```tsx
-<ResponsiveGrid>
+<ResponsiveGrid gap="{16}" minItemWidth="{160}">
   <Card />
   <Card />
   <Card />
@@ -369,100 +284,47 @@ This makes it useful inside:
 </ResponsiveGrid>
 ```
 
-### Minimum item width
+### Stretch last row
 
 ```tsx
-<ResponsiveGrid minItemWidth={180}>
-  <Card />
-  <Card />
-  <Card />
-  <Card />
-</ResponsiveGrid>
-```
-
-The grid uses `minItemWidth` as a layout constraint:
-
-```text
-Available width
-       ↓
-Minimum item width
-       ↓
-Calculate columns
-       ↓
-Render grid
-```
-
-### Custom spacing
-
-```tsx
-<ResponsiveGrid
-  minItemWidth={160}
-  gap={16}
->
+<ResponsiveGrid gap="{16}" maxColumns="{4}" minItemWidth="{160}" stretchLastRow>
   <Card />
   <Card />
   <Card />
 </ResponsiveGrid>
 ```
 
-### Limit columns
+`ResponsiveGrid` automatically calculates the number of columns based on the available container width and `minItemWidth`. When `stretchLastRow` is enabled, items on an incomplete final row expand to elegantly consume the remaining space.
 
-```tsx
-<ResponsiveGrid
-  minItemWidth={160}
-  gap={16}
-  maxColumns={4}
->
-  <Card />
-  <Card />
-  <Card />
-  <Card />
-</ResponsiveGrid>
-```
+> **Note:** `stretchLastRow` defaults to `false`, ensuring that existing `ResponsiveGrid` implementations retain their previous fixed-width behavior.
 
 ### Grid options
 
-| Prop           | Default | Description                        |
-| -------------- | ------: | ---------------------------------- |
-| `minItemWidth` |   `160` | Minimum desired width of each item |
-| `gap`          |    `12` | Space between grid items           |
-| `minColumns`   |     `1` | Minimum number of columns          |
-| `maxColumns`   |       — | Optional maximum number of columns |
+| Prop             | Default | Description                                                             |
+| ---------------- | ------- | ----------------------------------------------------------------------- |
+| `minItemWidth`   | `160`   | Minimum desired width of each item                                      |
+| `gap`            | `12`    | Space between grid items                                                |
+| `minColumns`     | `1`     | Minimum number of columns to allow                                      |
+| `maxColumns`     | —       | Optional maximum number of columns                                      |
+| `stretchLastRow` | `false` | Whether incomplete trailing rows should expand to fill horizontal space |
 
 > **ResponsiveRow is breakpoint-driven, while ResponsiveGrid is available-space-driven.**
 
 ---
 
-## `ResponsiveShow`
+## `ResponsiveShow` / `ResponsiveHide`
 
-Render content conditionally based on the current responsive breakpoint.
+Render or hide content conditionally based on the current responsive breakpoint.
 
 ```tsx
 <ResponsiveShow above="tablet">
-  <DesktopNavigation />
+  <DesktopNavigation/>
 </ResponsiveShow>
-```
 
-You can also target specific breakpoints:
-
-```tsx
-<ResponsiveShow
-  only={["phone", "small-phone"]}
->
-  <MobileNavigation />
-</ResponsiveShow>
-```
-
----
-
-## `ResponsiveHide`
-
-Hide content based on responsive breakpoints.
-
-```tsx
 <ResponsiveHide below="tablet">
-  <DesktopNavigation />
+  <DesktopNavigation/>
 </ResponsiveHide>
+
 ```
 
 ---
@@ -475,36 +337,29 @@ Use the debug overlay during development to inspect the current responsive state
 <ResponsiveDebugOverlay />
 ```
 
-It is intended as a development tool rather than a production UI component.
-
 ---
 
 # Choosing the right tool
 
 | Requirement                                    | Use                                 |
 | ---------------------------------------------- | ----------------------------------- |
-| Change a value at a breakpoint                 | `useResponsiveValue()`              |
-| Smoothly scale a value                         | `useFluidValue()`                   |
-| Responsive spacing                             | `useResponsiveSpacing()`            |
-| Responsive typography                          | `useResponsiveTypography()`         |
-| Responsive border radius                       | `useResponsiveRadii()`              |
-| Access multiple layout tokens                  | `useLayout()`                       |
+| Access all responsive layout variables at once | `useLayout()`                       |
+| Change a value abruptly at a breakpoint        | `useResponsiveValue()`              |
+| Smoothly scale a value continuously            | `useFluidValue()`                   |
 | Center/constrain content                       | `ResponsiveContainer`               |
 | Horizontal layout that stacks on small screens | `ResponsiveRow`                     |
 | Automatically calculate grid columns           | `ResponsiveGrid`                    |
 | Conditionally render by breakpoint             | `ResponsiveShow` / `ResponsiveHide` |
-| Inspect responsive state during development    | `ResponsiveDebugOverlay`            |
 
 ---
 
 # Complete example
 
-The components and hooks are designed to work together.
+The components and hooks are designed to work together cleanly.
 
 ```tsx
 import React from "react";
 import { View } from "react-native";
-
 import {
   ResponsiveContainer,
   ResponsiveRow,
@@ -513,30 +368,27 @@ import {
 } from "@ladiyusuph/responsive-rn";
 
 export function Dashboard() {
-  const { sectionGap } = useLayout();
+  const layout = useLayout();
 
   return (
     <ResponsiveContainer>
-      <ResponsiveRow gap={16}>
-        <Header />
-        <Actions />
+      <ResponsiveRow gap="{layout.gap}">
+        <Header/>
+        <Actions/>
       </ResponsiveRow>
 
-      <View style={{ marginTop: sectionGap }}>
-        <ResponsiveGrid
-          minItemWidth={160}
-          gap={16}
-          maxColumns={4}
-        >
-          <StatCard />
-          <StatCard />
-          <StatCard />
-          <StatCard />
+      <View layout.spacing.section marginTop: style="{{" }}>
+        <ResponsiveGrid gap="{layout.gap}" maxColumns="{4}" minItemWidth="{160}" stretchLastRow>
+          <StatCard/>
+          <StatCard/>
+          <StatCard/>
+          <StatCard/>
         </ResponsiveGrid>
       </View>
     </ResponsiveContainer>
   );
 }
+
 ```
 
 ---
@@ -547,51 +399,22 @@ The package separates **responsive mechanics** from **application design decisio
 
 ### Breakpoints
 
-Breakpoints determine **when** the layout changes.
-
-```text
-smallPhone → phone → tablet
-```
+Breakpoints determine **when** the layout changes (`smallPhone → phone → tablet`).
 
 ### Responsive tokens
 
-Tokens determine **which values** are used at each responsive tier.
-
-```text
-padding
-fontSize
-borderRadius
-spacing
-```
+Tokens determine **which values** are used at each responsive tier (`padding`, `fontSize`, `spacing`).
 
 ### Flexbox
 
 Flexbox determines how content fills the available space.
 
-### `useResponsiveValue()`
-
-Use when a value should change discretely at a breakpoint.
-
-```text
-12 → 16 → 24
-```
-
-### `useFluidValue()`
-
-Use when a value should scale smoothly.
-
-```text
-20 ─────── smoothly ─────── 32
-```
-
 ### Responsive components
 
-Components such as `ResponsiveRow` and `ResponsiveGrid` provide higher-level responsive layout behavior.
+Components such as `ResponsiveRow` and `ResponsiveGrid` provide higher-level responsive layout behavior. In particular:
 
-In particular:
-
-* `ResponsiveRow` responds to **breakpoints**
-* `ResponsiveGrid` responds to **available space**
+- `ResponsiveRow` responds to **breakpoints**.
+- `ResponsiveGrid` responds to **available space**.
 
 This allows applications to combine breakpoint-based decisions with fluid, constraint-based layouts.
 
@@ -599,39 +422,7 @@ This allows applications to combine breakpoint-based decisions with fluid, const
 
 # Customizing the design system
 
-The library provides sensible starting values, but applications should define the values that make sense for their own design system.
-
-You do **not** need to modify the library source code to establish your application's design system.
-
-```tsx
-<ResponsiveProvider
-  config={{
-    breakpoints: {
-      smallPhone: 375,
-      phone: 640,
-      tablet: 900,
-    },
-
-    spacing: {
-      screen: {
-        small: 16,
-        phone: 24,
-        tablet: 32,
-      },
-    },
-
-    typography: {
-      xxl: {
-        small: 22,
-        phone: 26,
-        tablet: 32,
-      },
-    },
-  }}
->
-  <App />
-</ResponsiveProvider>
-```
+The library provides sensible starting values, but applications should define the values that make sense for their own design system. You do **not** need to modify the library source code to establish your application's design system—just configure the `ResponsiveProvider`.
 
 ---
 
@@ -639,9 +430,7 @@ You do **not** need to modify the library source code to establish your applicat
 
 React Native already provides powerful Flexbox primitives, but building a consistent responsive design system often requires repeating the same logic across screens.
 
-This library provides reusable primitives for common responsive concerns without replacing React Native's layout system.
-
-The goal is to make responsive behavior easier to configure, understand, and maintain.
+This library provides reusable primitives for common responsive concerns without replacing React Native's layout system. The goal is to make responsive behavior easier to configure, understand, and maintain.
 
 ---
 
@@ -649,3 +438,6 @@ The goal is to make responsive behavior easier to configure, understand, and mai
 
 MIT
 
+```
+
+```

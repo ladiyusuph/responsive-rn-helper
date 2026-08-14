@@ -70,7 +70,7 @@ export function ResponsiveGrid({
   const cellWidth = useMemo(() => {
     if (columns <= 0) return 0;
 
-    return (width - gap * (columns - 1)) / columns;
+    return Math.floor((width - gap * (columns - 1)) / columns);
   }, [width, gap, columns]);
 
   const handleLayout = useCallback(
