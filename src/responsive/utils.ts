@@ -14,13 +14,25 @@ export function responsiveValue<T>(
   fallback: T,
   breakpoints: Breakpoints,
 ): T {
-  if (width >= breakpoints.tablet && values.largeTablet !== undefined)
-    return values.largeTablet;
-  if (width >= breakpoints.phone && values.tablet !== undefined)
-    return values.tablet;
-  if (width >= breakpoints.smallPhone && values.phone !== undefined)
-    return values.phone;
-  return values.small ?? fallback;
+  if (width >= breakpoints.tablet) {
+    return (
+      values.largeTablet ??
+      values.tablet ??
+      values.phone ??
+      values.small ??
+      fallback
+    );
+  }
+
+  if (width >= breakpoints.phone) {
+    return values.tablet ?? values.phone ?? values.small ?? fallback;
+  }
+
+  if (width >= breakpoints.smallPhone) {
+    return values.phone ?? values.small ?? fallback;
+  }
+
+  return values.small ?? values.phone ?? fallback;
 }
 
 export function clamp(value: number, min: number, max: number): number {
