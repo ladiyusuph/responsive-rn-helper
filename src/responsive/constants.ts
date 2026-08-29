@@ -78,17 +78,69 @@ export const DEFAULT_RESPONSIVE_RADII: ResponsiveRadiiConfig = {
  *   further away, but headers should scale up to fill the visual space.
  */
 export const DEFAULT_TYPOGRAPHY: ResponsiveTypographyConfig = {
-  xxs: { small: 10, phone: 10, tablet: 10, largeTablet: 10 }, // Badges only
-  xs: { small: 12, phone: 12, tablet: 13, largeTablet: 14 }, // Captions/Legal
-  sm: { small: 14, phone: 14, tablet: 15, largeTablet: 16 }, // Secondary text
-  md: { small: 16, phone: 16, tablet: 17, largeTablet: 18 }, // Base Body (M3 Body Large)
-  lg: { small: 18, phone: 18, tablet: 20, largeTablet: 22 }, // Subtitles / H6
-  xl: { small: 20, phone: 20, tablet: 22, largeTablet: 24 }, // App Bar Titles / H5
-  xxl: { small: 24, phone: 24, tablet: 28, largeTablet: 32 }, // H4
-  "2xl": { small: 28, phone: 28, tablet: 32, largeTablet: 40 }, // H3
-  "3xl": { small: 32, phone: 32, tablet: 40, largeTablet: 48 }, // Hero / Display
-};
+  xxs: {
+    small: 9,
+    phone: 10,
+    tablet: 10,
+    largeTablet: 10,
+  },
 
+  xs: {
+    small: 10,
+    phone: 11,
+    tablet: 12,
+    largeTablet: 13,
+  },
+
+  sm: {
+    small: 12,
+    phone: 12,
+    tablet: 13,
+    largeTablet: 14,
+  },
+
+  md: {
+    small: 13,
+    phone: 14,
+    tablet: 15,
+    largeTablet: 16,
+  },
+
+  lg: {
+    small: 15,
+    phone: 16,
+    tablet: 18,
+    largeTablet: 20,
+  },
+
+  xl: {
+    small: 17,
+    phone: 18,
+    tablet: 20,
+    largeTablet: 22,
+  },
+
+  xxl: {
+    small: 20,
+    phone: 20,
+    tablet: 22,
+    largeTablet: 24,
+  },
+
+  "2xl": {
+    small: 24,
+    phone: 22,
+    tablet: 28,
+    largeTablet: 32,
+  },
+
+  "3xl": {
+    small: 28,
+    phone: 26,
+    tablet: 32,
+    largeTablet: 40,
+  },
+};
 export const DEFAULT_LAYOUT: LayoutConfig = {
   // Mobile standards generally use 16px safe-area margins.
   horizontalPadding: { small: 16, phone: 16, tablet: 24, largeTablet: 32 },
