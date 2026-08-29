@@ -25,7 +25,7 @@ describe("computeLayoutTokens", () => {
 
   describe("spacing", () => {
     it("returns the correct responsive gap", () => {
-      expect(layoutForWidth(320).gap).toBe(8);
+      expect(layoutForWidth(310).gap).toBe(8);
       expect(layoutForWidth(390).gap).toBe(12);
       expect(layoutForWidth(700).gap).toBe(16);
       expect(layoutForWidth(1024).gap).toBe(24);
@@ -57,14 +57,15 @@ describe("computeLayoutTokens", () => {
 
   describe("columns", () => {
     it("returns the expected stat columns", () => {
-      expect(layoutForWidth(320).statColumns).toBe(1);
+      expect(layoutForWidth(310).statColumns).toBe(1);
+      expect(layoutForWidth(320).statColumns).toBe(2);
       expect(layoutForWidth(390).statColumns).toBe(2);
       expect(layoutForWidth(700).statColumns).toBe(4);
       expect(layoutForWidth(1024).statColumns).toBe(4);
     });
 
     it("gives large tablets more columns than tablets", () => {
-      const small = layoutForWidth(320);
+      const small = layoutForWidth(310);
       const phone = layoutForWidth(390);
       const tablet = layoutForWidth(700);
       const largeTablet = layoutForWidth(1024);

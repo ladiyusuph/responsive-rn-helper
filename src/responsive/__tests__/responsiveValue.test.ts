@@ -5,7 +5,7 @@ describe("responsiveValue", () => {
   const values = { small: 8, phone: 12, tablet: 16, largeTablet: 24 };
 
   it("picks the value for each tier, largest threshold first", () => {
-    expect(responsiveValue(320, values, 0, DEFAULT_BREAKPOINTS)).toBe(8);
+    expect(responsiveValue(310, values, 0, DEFAULT_BREAKPOINTS)).toBe(8);
     expect(responsiveValue(500, values, 0, DEFAULT_BREAKPOINTS)).toBe(12);
     expect(responsiveValue(700, values, 0, DEFAULT_BREAKPOINTS)).toBe(16);
     expect(responsiveValue(1024, values, 0, DEFAULT_BREAKPOINTS)).toBe(24);
