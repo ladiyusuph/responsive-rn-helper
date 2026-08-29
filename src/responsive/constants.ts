@@ -15,7 +15,7 @@ import type {
  * - tablet (840): The M3 "Expanded" breakpoint (Landscape tablets, small laptops).
  */
 export const DEFAULT_BREAKPOINTS: Breakpoints = {
-  smallPhone: 360,
+  smallPhone: 320,
   phone: 600,
   tablet: 840,
 };
