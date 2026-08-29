@@ -2,14 +2,49 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, type LayoutChangeEvent, type ViewProps } from "react-native";
 
 import { useResponsive } from "../hooks/useResponsive";
-import { computeGridColumns, responsiveValue } from "../utils";
+import {
+  computeGridColumns,
+  normalizeColumnCount,
+  resolveGridColumns,
+  responsiveValue,
+} from "../utils";
 import type { ResponsiveValues } from "../types";
 
 type ResponsiveGridProps = ViewProps & {
   children: React.ReactNode;
 
   /**
+   * Explicit column count — bypasses auto-fit entirely.
+   *
+   * When provided, the grid no longer derives column count from
+   * `minItemWidth`/`minColumns`/`maxColumns` (which are ignored, with a
+   * dev warning if also supplied). You are stating the exact number of
+   * columns; the grid divides the available width evenly between them.
+   *
+   * Can be a fixed number:
+   *
+   * columns={2}
+   *
+   * Or responsive, one count per breakpoint:
+   *
+   * columns={{
+   *   small: 1,
+   *   phone: 2,
+   *   tablet: 3,
+   *   largeTablet: 4,
+   * }}
+   *
+   * Use this when you want a guaranteed, deterministic column count and
+   * don't want cell width to influence how many columns are shown. Use
+   * `minItemWidth` (below) instead when you want the grid to auto-fit as
+   * many columns as comfortably fit an unknown/variable container width.
+   */
+  columns?: number | ResponsiveValues<number>;
+
+  /**
    * Minimum width each grid item should have.
+   *
+   * Ignored when `columns` is provided.
    *
    * @default 160
    */
@@ -24,11 +59,15 @@ type ResponsiveGridProps = ViewProps & {
 
   /**
    * Maximum number of columns the grid is allowed to display.
+   *
+   * Ignored when `columns` is provided.
    */
   maxColumns?: number;
 
   /**
    * Minimum number of columns the grid should display.
+   *
+   * Ignored when `columns` is provided.
    *
    * @default 1
    */
@@ -78,10 +117,11 @@ type ResponsiveGridProps = ViewProps & {
 
 export function ResponsiveGrid({
   children,
-  minItemWidth = 160,
+  columns: columnsProp,
+  minItemWidth,
   gap = 12,
   maxColumns,
-  minColumns = 1,
+  minColumns,
   itemHeight,
   aspectRatio,
   stretchLastRow = false,
@@ -120,14 +160,79 @@ export function ResponsiveGrid({
   }, [itemHeight, aspectRatio]);
 
   /**
-   * Calculate the number of columns that can fit inside
-   * the actual available width.
+   * `columns` bypasses the auto-fit algorithm entirely. If the caller also
+   * passed the auto-fit props, they're silently ignored below — warn so
+   * that's not a silent surprise.
+   */
+  useEffect(() => {
+    if (
+      __DEV__ &&
+      columnsProp !== undefined &&
+      (minItemWidth !== undefined ||
+        minColumns !== undefined ||
+        maxColumns !== undefined)
+    ) {
+      console.warn(
+        "ResponsiveGrid: 'columns' was provided, so 'minItemWidth', 'minColumns', " +
+          "and 'maxColumns' are ignored. Remove them, or remove 'columns' to go " +
+          "back to auto-fit sizing.",
+      );
+    }
+  }, [columnsProp, minItemWidth, minColumns, maxColumns]);
+
+  /**
+   * maxColumns < minColumns is a contradictory configuration.
+   * resolveGridColumns() lets minColumns win, but warn so it's not silent.
+   * Only relevant in auto-fit mode — 'columns' overrides both anyway.
+   */
+  useEffect(() => {
+    if (
+      __DEV__ &&
+      columnsProp === undefined &&
+      maxColumns !== undefined &&
+      minColumns !== undefined &&
+      maxColumns < minColumns
+    ) {
+      console.warn(
+        `ResponsiveGrid: 'maxColumns' (${maxColumns}) is less than 'minColumns' ` +
+          `(${minColumns}). 'minColumns' will take precedence.`,
+      );
+    }
+  }, [columnsProp, minColumns, maxColumns]);
+
+  /**
+   * Column count comes from one of two mutually exclusive strategies:
+   *
+   * 1. Explicit ('columns' prop): the caller states the exact column
+   *    count (optionally per breakpoint). No auto-fit math runs at all —
+   *    cell width is purely a function of the column count.
+   *
+   * 2. Auto-fit (default): the grid calculates how many columns of at
+   *    least 'minItemWidth' can fit in the available width, then clamps
+   *    that to ['minColumns', 'maxColumns'].
    */
   const columns = useMemo(() => {
-    const calculated = computeGridColumns(width, minItemWidth, gap);
+    if (columnsProp !== undefined) {
+      const resolvedColumns =
+        typeof columnsProp === "number"
+          ? columnsProp
+          : responsiveValue(width, columnsProp, 1, breakpoints);
 
-    return Math.min(maxColumns ?? calculated, Math.max(calculated, minColumns));
-  }, [width, minItemWidth, gap, minColumns, maxColumns]);
+      return normalizeColumnCount(resolvedColumns);
+    }
+
+    const calculated = computeGridColumns(width, minItemWidth ?? 160, gap);
+
+    return resolveGridColumns(calculated, minColumns ?? 1, maxColumns);
+  }, [
+    columnsProp,
+    width,
+    breakpoints,
+    minItemWidth,
+    gap,
+    minColumns,
+    maxColumns,
+  ]);
   /**
    * Calculate the exact width of one grid cell.
    *

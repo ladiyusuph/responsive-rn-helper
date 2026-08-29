@@ -176,6 +176,54 @@ export function computeGridColumns(
 
   return Math.max(1, columns);
 }
+
+/**
+ * Pure clamp applied to the raw column count from computeGridColumns.
+ *
+ * Order matters: cap by maxColumns FIRST, then floor by minColumns. Doing
+ * it the other way (or combining both into a single Math.min like the old
+ * implementation did) silently drops minColumns whenever maxColumns isn't
+ * also supplied, because `Math.min(calculated, Math.max(calculated, minColumns))`
+ * always collapses back to `calculated`.
+ *
+ * If maxColumns < minColumns (a contradictory config), minColumns wins —
+ * the caller is expected to warn about that in dev.
+ */
+export function resolveGridColumns(
+  calculatedColumns: number,
+  minColumns: number,
+  maxColumns?: number,
+): number {
+  const cappedByMax =
+    maxColumns !== undefined
+      ? Math.min(calculatedColumns, maxColumns)
+      : calculatedColumns;
+
+  return Math.max(minColumns, cappedByMax);
+}
+
+/**
+ * Normalizes an explicit `columns` value (from ResponsiveGrid's `columns`
+ * prop) into a safe integer column count: rounds to the nearest whole
+ * number and floors at 1, so `columns={0}` or a negative/fractional value
+ * from a misconfigured responsive map never produces a broken layout.
+ */
+export function normalizeColumnCount(value: number): number {
+  return Math.max(1, Math.round(value));
+}
+
+/**
+ * Pure decision behind ResponsiveRow's stacking behavior: should the row
+ * lay its children out in a column instead of a row, given the width
+ * actually available to it?
+ */
+export function shouldStackRow(
+  width: number,
+  smallPhoneBreakpoint: number,
+  stackOnSmall: boolean,
+): boolean {
+  return stackOnSmall && width < smallPhoneBreakpoint;
+}
 /**
  * Smooth CSS clamp()-style interpolation: `minValue` at `minWidth` and below,
  * `maxValue` at `maxWidth` and above, linearly interpolated in between.
