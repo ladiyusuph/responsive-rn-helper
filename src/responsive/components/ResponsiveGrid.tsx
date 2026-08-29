@@ -126,13 +126,8 @@ export function ResponsiveGrid({
   const columns = useMemo(() => {
     const calculated = computeGridColumns(width, minItemWidth, gap);
 
-    const withMinimum = Math.max(calculated, minColumns);
-
-    return maxColumns === undefined
-      ? withMinimum
-      : Math.min(withMinimum, maxColumns);
+    return Math.min(maxColumns ?? calculated, Math.max(calculated, minColumns));
   }, [width, minItemWidth, gap, minColumns, maxColumns]);
-
   /**
    * Calculate the exact width of one grid cell.
    *
@@ -291,6 +286,8 @@ export function ResponsiveGrid({
                * their calculated geometry.
                */
               flexShrink: 0,
+
+              alignSelf: "stretch",
 
               /**
                * Explicit height takes priority.
