@@ -248,11 +248,9 @@ export function ResponsiveGrid({
    * We intentionally do NOT Math.floor() this value.
    */
   const cellWidth = useMemo(() => {
-    if (columns <= 0) {
-      return 0;
-    }
-
-    return (width - gap * (columns - 1)) / columns;
+    if (columns <= 0) return 0;
+    const raw = (width - gap * (columns - 1)) / columns;
+    return Math.floor(raw) - 0.5; // never let the row hit the exact container width
   }, [width, gap, columns]);
 
   /**
