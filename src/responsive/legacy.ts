@@ -2,9 +2,17 @@ declare const __DEV__: boolean | undefined;
 
 const warned = new Set<string>();
 
+/**
+ * True in React Native / Expo development builds. Guarded with typeof so it
+ * also works where the bundler doesn't define __DEV__ (tests, plain web).
+ */
+export function isDev(): boolean {
+  return typeof __DEV__ !== "undefined" && !!__DEV__;
+}
+
 /** One console warning per key per session, in development only. */
 export function warnOnce(key: string, message: string): void {
-  if (typeof __DEV__ === "undefined" || !__DEV__ || warned.has(key)) return;
+  if (!isDev() || warned.has(key)) return;
 
   warned.add(key);
   console.warn(`[responsive-rn] ${message}`);

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useResponsive } from "../hooks/useResponsive";
-
-declare const __DEV__: boolean | undefined;
+import { isDev } from "../legacy";
 
 export type ResponsiveDebugOverlayProps = {
   position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -27,8 +26,7 @@ export function ResponsiveDebugOverlay({
   const { width, height, tier, formFactor, fontScale, isLandscape, breakpoints } =
     useResponsive();
 
-  const isDev = typeof __DEV__ !== "undefined" && __DEV__;
-  if (!isDev && !forceShow) return null;
+  if (!isDev() && !forceShow) return null;
 
   return (
     <View pointerEvents="box-none" style={[styles.container, POSITION_STYLES[position]]}>

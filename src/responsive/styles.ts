@@ -1,6 +1,6 @@
 import type { ImageStyle, TextStyle, ViewStyle } from "react-native";
 import { isResponsiveMap, resolveResponsive } from "./tiers";
-import type { ResponsiveValues, Tier } from "./types";
+import type { LegacyResponsiveValues, ResponsiveValues, Tier } from "./types";
 
 /** A style whose properties can each be one value per tier. */
 export type ResponsiveStyle<S> = {
@@ -14,15 +14,20 @@ type AnyResponsiveStyle =
 
 export type NamedResponsiveStyles<T> = { [P in keyof T]: AnyResponsiveStyle };
 
+type ResponsiveKey = Tier | keyof LegacyResponsiveValues<unknown>;
+
 /**
- * Unwraps a per-tier map to its value type. Primitives are excluded first:
- * strings have a (legacy HTML) `small()` method, so `"red"` would otherwise
- * look like a map with the 1.x `small` key.
+ * Unwraps a per-tier map to its value type. Only object types that declare
+ * a tier key count as maps: structural matching alone would also unwrap
+ * index-signature styles (e.g. fontVariationSettings) and strings, which
+ * have a legacy HTML `small()` method that looks like the 1.x `small` key.
  */
 type Unresponsive<V> = V extends object
-  ? V extends ResponsiveValues<infer U>
-    ? U
-    : V
+  ? [Extract<keyof V, ResponsiveKey>] extends [never]
+    ? V
+    : V extends ResponsiveValues<infer U>
+      ? U
+      : V
   : V;
 
 export type ResolvedStyles<T> = {

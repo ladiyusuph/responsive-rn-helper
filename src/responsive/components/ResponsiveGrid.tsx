@@ -4,6 +4,7 @@ import { View, type ViewProps } from "react-native";
 import { useResponsive } from "../hooks/useResponsive";
 import { useContainerWidth } from "../hooks/useContainerWidth";
 import { computeGridLayout, computeGridPlaceholderCount } from "../utils";
+import { isDev } from "../legacy";
 import { resolveResponsive } from "../tiers";
 import type { Responsive } from "../types";
 
@@ -148,7 +149,7 @@ export function ResponsiveGrid({
    * Warn developers if they accidentally provide both.
    */
   useEffect(() => {
-    if (__DEV__ && itemHeight !== undefined && aspectRatio !== undefined) {
+    if (isDev() && itemHeight !== undefined && aspectRatio !== undefined) {
       console.warn(
         "ResponsiveGrid: 'itemHeight' and 'aspectRatio' " +
           "cannot be used together. 'itemHeight' will take precedence.",
@@ -163,7 +164,7 @@ export function ResponsiveGrid({
    */
   useEffect(() => {
     if (
-      __DEV__ &&
+      isDev() &&
       columnsProp !== undefined &&
       (minItemWidth !== undefined ||
         minColumns !== undefined ||
@@ -184,7 +185,7 @@ export function ResponsiveGrid({
    */
   useEffect(() => {
     if (
-      __DEV__ &&
+      isDev() &&
       columnsProp === undefined &&
       maxColumns !== undefined &&
       minColumns !== undefined &&
