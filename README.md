@@ -67,11 +67,15 @@ The package provides sensible defaults for common responsive layouts.
 
 | Breakpoint   | Default width |
 | ------------ | ------------- |
-| `smallPhone` | `360`         |
+| `smallPhone` | `320`         |
 | `phone`      | `600`         |
 | `tablet`     | `840`         |
 
 These values are layout thresholds, not device classifications.
+
+`smallPhone` is deliberately low: a row inside a 16px-padded container on a 390pt iPhone measures 358pt and should still lay out as a row.
+
+> **Landscape phones:** tiers are width-based, so a phone in landscape (e.g. 852pt wide) lands in the `large-tablet` tier. That's usually what you want for layout (there really is more horizontal space), but not always for sizing. Use `formFactor` from `useResponsive()` when you need to know whether the hardware is a phone or a tablet — see [Device form factor](#device-form-factor).
 
 ---
 
@@ -278,6 +282,70 @@ Unlike `useResponsiveValue()`, `useFluidValue()` interpolates continuously betwe
 
 ---
 
+## Device form factor
+
+`useResponsive()` returns the raw window size plus breakpoint flags. Alongside the width-based `deviceType`, it exposes an orientation-independent `formFactor`:
+
+```tsx
+const { deviceType, formFactor, shortestSide, isLandscape } = useResponsive();
+
+// iPhone 15 Pro Max, landscape:
+// deviceType   → "large-tablet"   (932pt wide)
+// formFactor   → "phone"          (shortest side 430 < phone breakpoint)
+```
+
+`formFactor` is `"tablet"` when the shortest side is at least the `phone` breakpoint (600 by default — the same threshold as Android's `sw600dp`).
+
+---
+
+## `useContainerWidth()`
+
+Measures the width a view actually receives from its parent. This is what `ResponsiveGrid` and `ResponsiveRow` use internally, exposed so you can build your own container-aware components.
+
+```tsx
+const { width, onLayout } = useContainerWidth();
+
+return (
+  <View onLayout={onLayout}>
+    {width !== null && width < 400 ? <CompactCard /> : <WideCard />}
+  </View>
+);
+```
+
+`width` is `null` until the first layout pass.
+
+---
+
+## `useGridLayout()`
+
+Column count and item width for virtualized lists, computed with the same rules as `ResponsiveGrid`. `ResponsiveGrid` renders every child, so use this with `FlatList` or `FlashList` for long lists.
+
+```tsx
+const { width, onLayout } = useContainerWidth();
+const { numColumns, itemWidth, gap } = useGridLayout({
+  width, // optional — defaults to the window width
+  minItemWidth: 160,
+  maxColumns: 4,
+});
+
+<View style={{ flex: 1 }} onLayout={onLayout}>
+  <FlatList
+    key={numColumns} // FlatList can't change numColumns on the fly
+    data={items}
+    numColumns={numColumns}
+    columnWrapperStyle={numColumns > 1 ? { gap } : undefined}
+    contentContainerStyle={{ gap }}
+    renderItem={({ item }) => (
+      <ProductCard item={item} style={{ width: itemWidth }} />
+    )}
+  />
+</View>
+```
+
+Accepts the same `columns`, `minItemWidth`, `gap`, `minColumns` and `maxColumns` options as `ResponsiveGrid`.
+
+---
+
 # Components
 
 ## `ResponsiveContainer`
@@ -303,12 +371,14 @@ Provides a horizontal layout that can automatically stack its children verticall
 </ResponsiveRow>
 ```
 
-By default:
+By default the row stacks when **its own measured width** is narrower than the `smallPhone` breakpoint (320 by default):
 
 ```text
-Small phone → column
-Phone+      → row
+< smallPhone → column
+≥ smallPhone → row
 ```
+
+Because it measures itself, a row inside a narrow sidebar or modal stacks even on a tablet. Pass `measureContainer={false}` to use the window width instead.
 
 ---
 
@@ -645,6 +715,12 @@ This separation allows the same content component to be used inside a grid, row,
 
 ---
 
+## Long lists
+
+`ResponsiveGrid` renders all of its children at once. For long or infinite lists, use [`useGridLayout()`](#usegridlayout) with `FlatList` / `FlashList` to get the same column logic with virtualization.
+
+---
+
 ## ResponsiveGrid vs ResponsiveRow
 
 These components solve different problems.
@@ -719,6 +795,9 @@ Use the debug overlay during development to inspect the current responsive state
 | Responsive grid height                         | `ResponsiveGrid itemHeight={{ ... }}` |
 | Maintain an aspect ratio                       | `ResponsiveGrid aspectRatio={...}`    |
 | Conditionally render by breakpoint             | `ResponsiveShow` / `ResponsiveHide`   |
+| Grid columns for a long FlatList / FlashList   | `useGridLayout()`                     |
+| React to a component's own width               | `useContainerWidth()`                 |
+| Phone vs tablet hardware, regardless of rotation | `useResponsive().formFactor`        |
 
 ---
 

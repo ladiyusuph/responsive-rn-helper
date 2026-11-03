@@ -1,13 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, type LayoutChangeEvent, type ViewProps } from "react-native";
+import React, { useEffect, useMemo } from "react";
+import { View, type ViewProps } from "react-native";
 
 import { useResponsive } from "../hooks/useResponsive";
-import {
-  computeGridColumns,
-  normalizeColumnCount,
-  resolveGridColumns,
-  responsiveValue,
-} from "../utils";
+import { useContainerWidth } from "../hooks/useContainerWidth";
+import { computeGridLayout, responsiveValue } from "../utils";
 import type { ResponsiveValues } from "../types";
 
 type ResponsiveGridProps = ViewProps & {
@@ -140,7 +136,8 @@ export function ResponsiveGrid({
    */
   const { width: screenWidth, breakpoints } = useResponsive();
 
-  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const { width: measuredWidth, onLayout: handleLayout } =
+    useContainerWidth(onLayout);
 
   const width = measuredWidth ?? screenWidth;
 
@@ -211,47 +208,34 @@ export function ResponsiveGrid({
    *    least 'minItemWidth' can fit in the available width, then clamps
    *    that to ['minColumns', 'maxColumns'].
    */
-  const columns = useMemo(() => {
-    if (columnsProp !== undefined) {
-      const resolvedColumns =
-        typeof columnsProp === "number"
-          ? columnsProp
-          : responsiveValue(width, columnsProp, 1, breakpoints);
+  const { numColumns: columns, itemWidth: cellWidth } = useMemo(
+    () =>
+      computeGridLayout({
+        width,
+        columns: columnsProp,
+        minItemWidth,
+        gap,
+        minColumns,
+        maxColumns,
+        breakpoints,
+      }),
+    [columnsProp, width, breakpoints, minItemWidth, gap, minColumns, maxColumns],
+  );
 
-      return normalizeColumnCount(resolvedColumns);
-    }
-
-    const calculated = computeGridColumns(width, minItemWidth ?? 160, gap);
-
-    return resolveGridColumns(calculated, minColumns ?? 1, maxColumns);
-  }, [
-    columnsProp,
-    width,
-    breakpoints,
-    minItemWidth,
-    gap,
-    minColumns,
-    maxColumns,
-  ]);
   /**
-   * Calculate the exact width of one grid cell.
+   * Cell sizing, without sub-pixel wrapping:
    *
-   * Example:
+   * width = 393, columns = 2, gap = 12
+   * cellWidth = (393 - 12) / 2 = 190.5
    *
-   * width = 393
-   * columns = 2
-   * gap = 12
-   *
-   * (393 - 12) / 2
-   * = 190.5
-   *
-   * We intentionally do NOT Math.floor() this value.
+   * Setting `width: 190.5` on every cell can overflow the line by a rounding
+   * error and wrap the last cell. Instead each cell starts from a basis a
+   * little BELOW the exact width (so exactly `columns` cells always fit on a
+   * line), then flex-grows into the leftover space, capped at the exact
+   * width by `maxWidth`. Full rows land flush with both edges; cells on a
+   * short last row keep the same width as everyone else.
    */
-  const cellWidth = useMemo(() => {
-    if (columns <= 0) return 0;
-    const raw = (width - gap * (columns - 1)) / columns;
-    return Math.floor(raw) - 0.5; // never let the row hit the exact container width
-  }, [width, gap, columns]);
+  const cellBasis = Math.max(0, Math.floor(cellWidth) - 1);
 
   /**
    * Resolve the actual height when itemHeight is supplied.
@@ -283,22 +267,6 @@ export function ResponsiveGrid({
 
     return responsiveValue(width, itemHeight, undefined, breakpoints);
   }, [width, itemHeight, breakpoints]);
-
-  /**
-   * Tell the grid about its actual rendered width.
-   */
-  const handleLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const nextWidth = event.nativeEvent.layout.width;
-
-      setMeasuredWidth((previousWidth) =>
-        previousWidth === nextWidth ? previousWidth : nextWidth,
-      );
-
-      onLayout?.(event);
-    },
-    [onLayout],
-  );
 
   /**
    * Remove null/false/non-element children so that
@@ -374,15 +342,15 @@ export function ResponsiveGrid({
           <View
             key={child.key ?? index}
             style={{
-              /**
-               * Normal cells have an exact calculated width.
-               *
-               * Last-row cells can grow when
-               * stretchLastRow is enabled.
-               */
-              width: shouldGrow ? undefined : cellWidth,
+              flexBasis: cellBasis,
 
-              flexGrow: shouldGrow ? 1 : 0,
+              flexGrow: 1,
+
+              /**
+               * Cap at the exact cell width. Dropped for a short last row
+               * when stretchLastRow is on, so those cells share the row.
+               */
+              maxWidth: shouldGrow ? undefined : cellWidth,
 
               /**
                * Prevent cells from shrinking below
@@ -390,7 +358,12 @@ export function ResponsiveGrid({
                */
               flexShrink: 0,
 
-              alignSelf: "stretch",
+              /**
+               * Stretch to the row's height, except with aspectRatio:
+               * Yoga resolves a stretched + flex-grown cell's aspect
+               * ratio to a height of 0, so let it size itself instead.
+               */
+              alignSelf: hasAspectRatio ? "flex-start" : "stretch",
 
               /**
                * Explicit height takes priority.

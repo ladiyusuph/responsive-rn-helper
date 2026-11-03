@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useRef } from "react";
 import {
   DEFAULT_BREAKPOINTS,
   DEFAULT_LAYOUT,
@@ -7,6 +7,7 @@ import {
   DEFAULT_TYPOGRAPHY,
 } from "../constants";
 import type { ResponsiveConfig, ResponsiveConfigOverrides } from "../types";
+import { isDeepEqual } from "../utils";
 
 const DEFAULT_CONFIG: ResponsiveConfig = {
   breakpoints: DEFAULT_BREAKPOINTS,
@@ -134,7 +135,7 @@ export function ResponsiveProvider({
   layout?: ResponsiveConfigOverrides["layout"];
   config?: ResponsiveConfigOverrides;
 }) {
-  const value = useMemo(
+  const merged = useMemo(
     () =>
       mergeConfig({
         ...config,
@@ -146,6 +147,17 @@ export function ResponsiveProvider({
       }),
     [config, breakpoints, spacing, typography, radii, layout],
   );
+
+  /**
+   * `config={{...}}` written inline is a new object every render. Only hand
+   * consumers a new context value when the merged config actually changed,
+   * otherwise every hook below the provider re-renders with the parent.
+   */
+  const stableValue = useRef(merged);
+  if (!isDeepEqual(stableValue.current, merged)) {
+    stableValue.current = merged;
+  }
+  const value = stableValue.current;
 
   return (
     <ResponsiveContext.Provider value={value}>

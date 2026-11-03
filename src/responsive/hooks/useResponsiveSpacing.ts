@@ -1,12 +1,15 @@
+import { useMemo } from "react";
 import { useResponsiveConfig } from "../context/ResponsiveProvider";
-import { useResponsiveValue } from "./useResponsiveValue";
+import { useResponsive } from "./useResponsive";
+import { computeSpacingTokens } from "../utils";
 
 export function useResponsiveSpacing() {
   const { spacing } = useResponsiveConfig();
-  return {
-    screen: useResponsiveValue(spacing.screen, 16),
-    section: useResponsiveValue(spacing.section, 20),
-    card: useResponsiveValue(spacing.card, 16),
-    gap: useResponsiveValue(spacing.gap, 12),
-  };
+  const { width, deviceType, breakpoints } = useResponsive();
+
+  // Tokens only change when the tier does, so key on deviceType, not width.
+  return useMemo(
+    () => computeSpacingTokens(width, spacing, breakpoints),
+    [deviceType, spacing, breakpoints],
+  );
 }

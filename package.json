@@ -6,11 +6,13 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "test": "jest",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
@@ -23,9 +25,17 @@
     "ui"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ladiyusuph/responsive-rn-helper.git"
+  },
+  "homepage": "https://github.com/ladiyusuph/responsive-rn-helper#readme",
+  "bugs": {
+    "url": "https://github.com/ladiyusuph/responsive-rn-helper/issues"
+  },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
+    "react": ">=17.0.0",
+    "react-native": ">=0.71.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

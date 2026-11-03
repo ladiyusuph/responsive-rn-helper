@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { useResponsiveConfig } from "../context/ResponsiveProvider";
-import { useResponsiveValue } from "./useResponsiveValue";
+import { useResponsive } from "./useResponsive";
+import { computeIconSizeTokens } from "../utils";
 
 /**
  * Access responsive icon-size tokens directly, without pulling in the rest
@@ -13,12 +15,11 @@ import { useResponsiveValue } from "./useResponsiveValue";
  */
 export function useResponsiveIconSizes() {
   const { layout } = useResponsiveConfig();
+  const { width, deviceType, breakpoints } = useResponsive();
 
-  return {
-    xs: useResponsiveValue(layout.iconSize.xs, 14),
-    sm: useResponsiveValue(layout.iconSize.sm, 18),
-    md: useResponsiveValue(layout.iconSize.md, 22),
-    lg: useResponsiveValue(layout.iconSize.lg, 26),
-    xl: useResponsiveValue(layout.iconSize.xl, 30),
-  };
+  // Tokens only change when the tier does, so key on deviceType, not width.
+  return useMemo(
+    () => computeIconSizeTokens(width, layout.iconSize, breakpoints),
+    [deviceType, layout.iconSize, breakpoints],
+  );
 }

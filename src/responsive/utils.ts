@@ -4,7 +4,12 @@ import type {
   BreakpointCondition,
   DeviceType,
   FluidConfig,
+  FormFactor,
   LayoutConfig,
+  ResponsiveRadiiConfig,
+  ResponsiveSizeValuesConfig,
+  ResponsiveSpacingConfig,
+  ResponsiveTypographyConfig,
   ResponsiveValues,
 } from "./types";
 
@@ -48,6 +53,15 @@ export type BreakpointFlags = {
   isLargeTablet: boolean;
   isLandscape: boolean;
   deviceType: DeviceType;
+  /** min(width, height) — stays the same when the device rotates. */
+  shortestSide: number;
+  /**
+   * Physical device class, independent of orientation. A phone held in
+   * landscape is often wider than the `tablet` breakpoint (e.g. 852pt on an
+   * iPhone 15), so `deviceType` alone would call it a large tablet. Use
+   * `formFactor` when you mean "is this hardware a phone or a tablet?".
+   */
+  formFactor: FormFactor;
 };
 
 /**
@@ -65,6 +79,7 @@ export function computeBreakpointFlags(
   const isPhone = width < breakpoints.phone;
   const isTablet = width >= breakpoints.phone;
   const isLargeTablet = width >= breakpoints.tablet;
+  const shortestSide = Math.min(width, height);
 
   const deviceType: DeviceType =
     width < breakpoints.smallPhone
@@ -82,6 +97,8 @@ export function computeBreakpointFlags(
     isLargeTablet,
     isLandscape: width > height,
     deviceType,
+    shortestSide,
+    formFactor: shortestSide >= breakpoints.phone ? "tablet" : "phone",
   };
 }
 
@@ -97,13 +114,7 @@ export type LayoutTokens = {
   buttonHeight: number;
   inputHeight: number;
   inputPaddingHorizontal: number;
-  iconSize: {
-    xs: number;
-    sm: number;
-    md: number;
-    lg: number;
-    xl: number;
-  };
+  iconSize: IconSizeTokens;
 };
 
 /**
@@ -143,17 +154,83 @@ export function computeLayoutTokens(
 
     inputPaddingHorizontal: resolve(layout.inputPaddingHorizontal ?? {}, 14),
 
-    iconSize: {
-      xs: resolve(layout.iconSize.xs, 14),
+    iconSize: computeIconSizeTokens(width, layout.iconSize, breakpoints),
+  };
+}
 
-      sm: resolve(layout.iconSize.sm, 18),
+export type SpacingTokens = Record<keyof ResponsiveSpacingConfig, number>;
+export type TypographyTokens = Record<keyof ResponsiveTypographyConfig, number>;
+export type RadiiTokens = Record<keyof ResponsiveRadiiConfig, number>;
+export type IconSizeTokens = Record<keyof ResponsiveSizeValuesConfig<number>, number>;
 
-      md: resolve(layout.iconSize.md, 22),
+export function computeSpacingTokens(
+  width: number,
+  spacing: ResponsiveSpacingConfig,
+  breakpoints: Breakpoints,
+): SpacingTokens {
+  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
+    responsiveValue(width, values, fallback, breakpoints);
 
-      lg: resolve(layout.iconSize.lg, 26),
+  return {
+    screen: resolve(spacing.screen, 16),
+    section: resolve(spacing.section, 20),
+    card: resolve(spacing.card, 16),
+    gap: resolve(spacing.gap, 12),
+  };
+}
 
-      xl: resolve(layout.iconSize.xl, 30),
-    },
+export function computeTypographyTokens(
+  width: number,
+  typography: ResponsiveTypographyConfig,
+  breakpoints: Breakpoints,
+): TypographyTokens {
+  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
+    responsiveValue(width, values, fallback, breakpoints);
+
+  return {
+    xxs: resolve(typography.xxs, 9),
+    xs: resolve(typography.xs, 10),
+    sm: resolve(typography.sm, 12),
+    md: resolve(typography.md, 14),
+    lg: resolve(typography.lg, 16),
+    xl: resolve(typography.xl, 18),
+    xxl: resolve(typography.xxl, 20),
+    "2xl": resolve(typography["2xl"], 22),
+    "3xl": resolve(typography["3xl"], 26),
+  };
+}
+
+export function computeRadiiTokens(
+  width: number,
+  radii: ResponsiveRadiiConfig,
+  breakpoints: Breakpoints,
+): RadiiTokens {
+  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
+    responsiveValue(width, values, fallback, breakpoints);
+
+  return {
+    sm: resolve(radii.sm, 8),
+    md: resolve(radii.md, 12),
+    lg: resolve(radii.lg, 16),
+    xl: resolve(radii.xl, 20),
+    xxl: resolve(radii.xxl, 24),
+  };
+}
+
+export function computeIconSizeTokens(
+  width: number,
+  iconSize: ResponsiveSizeValuesConfig<number>,
+  breakpoints: Breakpoints,
+): IconSizeTokens {
+  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
+    responsiveValue(width, values, fallback, breakpoints);
+
+  return {
+    xs: resolve(iconSize.xs, 14),
+    sm: resolve(iconSize.sm, 18),
+    md: resolve(iconSize.md, 22),
+    lg: resolve(iconSize.lg, 26),
+    xl: resolve(iconSize.xl, 30),
   };
 }
 
@@ -210,6 +287,60 @@ export function resolveGridColumns(
  */
 export function normalizeColumnCount(value: number): number {
   return Math.max(1, Math.round(value));
+}
+
+export type GridLayoutOptions = {
+  /** Width available to the grid (measured container width, ideally). */
+  width: number;
+  /** Explicit column count — bypasses auto-fit when provided. */
+  columns?: number | ResponsiveValues<number>;
+  /** @default 160 */
+  minItemWidth?: number;
+  /** @default 12 */
+  gap?: number;
+  /** @default 1 */
+  minColumns?: number;
+  maxColumns?: number;
+  breakpoints?: Breakpoints;
+};
+
+export type GridLayout = {
+  numColumns: number;
+  /** Exact width of one cell: (width - gap * (numColumns - 1)) / numColumns. */
+  itemWidth: number;
+  gap: number;
+};
+
+/**
+ * Pure column + cell-width calculation shared by ResponsiveGrid and
+ * useGridLayout. Explicit `columns` wins; otherwise auto-fit as many
+ * `minItemWidth` columns as fit, clamped to [minColumns, maxColumns].
+ */
+export function computeGridLayout({
+  width,
+  columns,
+  minItemWidth = 160,
+  gap = 12,
+  minColumns = 1,
+  maxColumns,
+  breakpoints = DEFAULT_BREAKPOINTS,
+}: GridLayoutOptions): GridLayout {
+  const numColumns =
+    columns !== undefined
+      ? normalizeColumnCount(
+          typeof columns === "number"
+            ? columns
+            : responsiveValue(width, columns, 1, breakpoints),
+        )
+      : resolveGridColumns(
+          computeGridColumns(width, minItemWidth, gap),
+          minColumns,
+          maxColumns,
+        );
+
+  const itemWidth = Math.max(0, (width - gap * (numColumns - 1)) / numColumns);
+
+  return { numColumns, itemWidth, gap };
 }
 
 /**
@@ -274,4 +405,35 @@ export function matchesBreakpointCondition(
   }
 
   return matches;
+}
+
+/**
+ * Structural equality for plain config data (objects, arrays, primitives).
+ * Used by ResponsiveProvider so an inline `config={{...}}` prop doesn't hand
+ * every consumer a new context value on each render.
+ */
+export function isDeepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null ||
+    Array.isArray(a) !== Array.isArray(b)
+  ) {
+    return false;
+  }
+
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+
+  return aKeys.every(
+    (key) =>
+      Object.prototype.hasOwnProperty.call(b, key) &&
+      isDeepEqual(
+        (a as Record<string, unknown>)[key],
+        (b as Record<string, unknown>)[key],
+      ),
+  );
 }

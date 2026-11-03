@@ -87,6 +87,23 @@ describe("computeBreakpointFlags", () => {
     expect(computeBreakpointFlags(400, 800, bp).isLandscape).toBe(false);
   });
 
+  it("classifies a landscape phone by form factor, not by width alone", () => {
+    // iPhone 15 Pro Max in landscape: wider than the tablet breakpoint.
+    const flags = computeBreakpointFlags(932, 430, bp);
+
+    expect(flags.deviceType).toBe("large-tablet");
+
+    expect(flags.shortestSide).toBe(430);
+
+    expect(flags.formFactor).toBe("phone");
+  });
+
+  it("classifies a tablet form factor in either orientation", () => {
+    expect(computeBreakpointFlags(820, 1180, bp).formFactor).toBe("tablet");
+
+    expect(computeBreakpointFlags(1180, 820, bp).formFactor).toBe("tablet");
+  });
+
   it("respects custom breakpoint overrides", () => {
     const custom = {
       smallPhone: 400,

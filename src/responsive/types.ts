@@ -6,6 +6,8 @@ export type Breakpoints = {
 
 export type DeviceType = "small-phone" | "phone" | "tablet" | "large-tablet";
 
+export type FormFactor = "phone" | "tablet";
+
 export type ResponsiveValues<T> = {
   small?: T;
   phone?: T;

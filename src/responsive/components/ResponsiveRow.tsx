@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from "react";
-import { View, type LayoutChangeEvent, type ViewProps } from "react-native";
+import React from "react";
+import { View, type ViewProps } from "react-native";
 
 import { useLayout } from "../hooks/useLayout";
+import { useContainerWidth } from "../hooks/useContainerWidth";
 import { shouldStackRow } from "../utils";
 
 type ResponsiveRowProps = ViewProps & {
@@ -58,7 +59,8 @@ export function ResponsiveRow({
    */
   const layout = useLayout();
 
-  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const { width: measuredWidth, onLayout: handleLayout } =
+    useContainerWidth(onLayout);
 
   const width = measureContainer
     ? (measuredWidth ?? layout.width)
@@ -70,25 +72,10 @@ export function ResponsiveRow({
     stackOnSmall,
   );
 
-  const handleLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      if (measureContainer) {
-        const nextWidth = event.nativeEvent.layout.width;
-
-        setMeasuredWidth((previousWidth) =>
-          previousWidth === nextWidth ? previousWidth : nextWidth,
-        );
-      }
-
-      onLayout?.(event);
-    },
-    [measureContainer, onLayout],
-  );
-
   return (
     <View
       {...props}
-      onLayout={handleLayout}
+      onLayout={measureContainer ? handleLayout : onLayout}
       style={[
         {
           flexDirection: isStacked ? "column" : "row",

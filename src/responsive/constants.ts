@@ -10,7 +10,9 @@ import type {
 /**
  * BREAKPOINTS
  * Justification: Based on Material Design 3 layout breakpoints.
- * - smallPhone (360): Standard baseline for small Android devices.
+ * - smallPhone (320): Only genuinely narrow widths (iPhone SE 1st gen, compact
+ *   Androids, or a narrow container). Kept below 360 on purpose: a row inside a
+ *   16px-padded container on a 390pt iPhone measures 358, and should not stack.
  * - phone (600): The M3 "Medium" breakpoint (Portrait tablets, large foldables).
  * - tablet (840): The M3 "Expanded" breakpoint (Landscape tablets, small laptops).
  */
@@ -128,14 +130,14 @@ export const DEFAULT_TYPOGRAPHY: ResponsiveTypographyConfig = {
   },
 
   "2xl": {
-    small: 24,
+    small: 22,
     phone: 22,
     tablet: 28,
     largeTablet: 32,
   },
 
   "3xl": {
-    small: 28,
+    small: 26,
     phone: 26,
     tablet: 32,
     largeTablet: 40,

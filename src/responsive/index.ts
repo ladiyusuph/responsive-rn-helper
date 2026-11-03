@@ -10,6 +10,8 @@ export * from "./hooks/useResponsiveRadii";
 export * from "./hooks/useResponsiveIconSizes";
 export * from "./hooks/useLayout";
 export * from "./hooks/useFluidValue";
+export * from "./hooks/useContainerWidth";
+export * from "./hooks/useGridLayout";
 export * from "./components/ResponsiveContainer";
 export * from "./components/ResponsiveRow";
 export * from "./components/ResponsiveGrid";
