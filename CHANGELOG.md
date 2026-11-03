@@ -20,6 +20,7 @@ A responsive design system rather than a set of helpers. **1.x code keeps workin
 - Pure helpers `getTier`, `resolveResponsive`, `resolveBreakpoints`, `normalizeConfig`, `resolveTokens`, `resolveStyles`, `computeWindowClass`.
 - ES module build (`dist/esm`, via the `module` field) next to CommonJS (`dist/cjs`).
 - MIGRATION.md.
+- Expo example app (`example/`) showing every feature, including a screen written only with 1.x APIs.
 
 ### Changed
 

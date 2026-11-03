@@ -1,0 +1,20 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@ladiyusuph/responsive-rn": [
+        "../src/index.ts"
+      ],
+      "react": [
+        "./node_modules/@types/react/index.d.ts"
+      ],
+      "react/*": [
+        "./node_modules/@types/react/*"
+      ],
+      "react-native": [
+        "./node_modules/react-native/types_generated/index.d.ts"
+      ]
+    }
+  }
+}

@@ -17,6 +17,8 @@ Define your spacing, type, radii and sizes once, per screen size. Then build scr
 
 > Upgrading from 1.x? Your code keeps working. See [MIGRATION.md](MIGRATION.md).
 
+> Want to see it first? The [example app](example/) shows every feature and runs on iOS, Android and web.
+
 ---
 
 ## Installation
@@ -410,6 +412,8 @@ A row that stacks its children vertically when there isn't room.
 ```
 
 The row measures **its own width**, so it stacks in a narrow sidebar or modal even on a tablet.
+
+> **Tip:** children that use `flex: 1` to share the row's width get `flexBasis: 0`, which collapses their height once the row stacks into a column. Give them `minHeight` instead of `height`.
 
 | Prop               | Default         | Description                                              |
 | ------------------ | --------------- | -------------------------------------------------------- |
