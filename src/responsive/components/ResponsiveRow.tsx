@@ -22,7 +22,7 @@ type ResponsiveRowProps = ViewProps & {
    *
    * stackBelow={480}  // two buttons that need ~240px each
    *
-   * @default the `smallPhone` breakpoint (320)
+   * @default 320
    */
   stackBelow?: number;
 
@@ -39,7 +39,7 @@ type ResponsiveRowProps = ViewProps & {
   /**
    * Horizontal (or, once stacked, vertical) gap between children.
    *
-   * Defaults to the current responsive `gap` token.
+   * Defaults to the `spacing.gap` token.
    */
   gap?: number;
 
@@ -51,7 +51,7 @@ type ResponsiveRowProps = ViewProps & {
    * This makes ResponsiveRow correct inside sidebars, split views, modals,
    * drawers, or any container narrower than the full screen: a row wedged
    * into a 300px panel on a wide tablet will now stack, even though the
-   * device itself is nowhere near "small phone" width.
+   * device itself is nowhere near a phone's width.
    *
    * Set to `false` to restore the legacy behavior of reacting only to
    * device/screen width, which is cheaper (no extra onLayout measurement)
@@ -90,6 +90,7 @@ export function ResponsiveRow({
 
   const isStacked = shouldStackRow(
     width,
+    // breakpoints.smallPhone is 320 unless a 1.x config overrides it.
     stackBelow ?? layout.breakpoints.smallPhone,
     stackOnSmall,
     { current: layout.fontScale, stackAt: stackAtFontScale },
@@ -102,7 +103,7 @@ export function ResponsiveRow({
       style={[
         {
           flexDirection: isStacked ? "column" : "row",
-          gap: gap ?? layout.gap,
+          gap: gap ?? layout.spacing.gap,
         },
         style,
       ]}

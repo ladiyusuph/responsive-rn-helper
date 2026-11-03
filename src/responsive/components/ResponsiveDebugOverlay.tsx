@@ -14,7 +14,7 @@ export type ResponsiveDebugOverlayProps = {
 };
 
 /**
- * Dev-only overlay showing the current width/height and breakpoint tier, so
+ * Dev-only overlay showing the current width/height and tier, so
  * you can sanity check layout at real device sizes instead of guessing from
  * the simulator's window title. Tap it to expand the full breakpoint config.
  * Renders nothing unless __DEV__ is true (or forceShow is passed).
@@ -24,7 +24,7 @@ export function ResponsiveDebugOverlay({
   forceShow = false,
 }: ResponsiveDebugOverlayProps) {
   const [expanded, setExpanded] = useState(false);
-  const { width, height, deviceType, formFactor, fontScale, isLandscape, breakpoints } =
+  const { width, height, tier, formFactor, fontScale, isLandscape, breakpoints } =
     useResponsive();
 
   const isDev = typeof __DEV__ !== "undefined" && __DEV__;
@@ -34,14 +34,14 @@ export function ResponsiveDebugOverlay({
     <View pointerEvents="box-none" style={[styles.container, POSITION_STYLES[position]]}>
       <Pressable onPress={() => setExpanded((value) => !value)} style={styles.badge}>
         <Text style={styles.text}>
-          {Math.round(width)}×{Math.round(height)} · {deviceType} · {isLandscape ? "landscape" : "portrait"}
+          {Math.round(width)}×{Math.round(height)} · {tier} · {isLandscape ? "landscape" : "portrait"}
         </Text>
         {expanded && (
           <View style={styles.details}>
-            <Text style={styles.detailText}>smallPhone &lt; {breakpoints.smallPhone}</Text>
-            <Text style={styles.detailText}>phone &lt; {breakpoints.phone}</Text>
-            <Text style={styles.detailText}>tablet &lt; {breakpoints.tablet}</Text>
-            <Text style={styles.detailText}>large-tablet ≥ {breakpoints.tablet}</Text>
+            <Text style={styles.detailText}>compact &lt; {breakpoints.medium}</Text>
+            <Text style={styles.detailText}>medium &lt; {breakpoints.expanded}</Text>
+            <Text style={styles.detailText}>expanded &lt; {breakpoints.large}</Text>
+            <Text style={styles.detailText}>large ≥ {breakpoints.large}</Text>
             <Text style={styles.detailText}>form factor: {formFactor}</Text>
             <Text style={styles.detailText}>font scale: {fontScale}</Text>
           </View>

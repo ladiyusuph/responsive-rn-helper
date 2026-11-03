@@ -3,12 +3,9 @@ import { View, type ViewProps } from "react-native";
 
 import { useResponsive } from "../hooks/useResponsive";
 import { useContainerWidth } from "../hooks/useContainerWidth";
-import {
-  computeGridLayout,
-  computeGridPlaceholderCount,
-  responsiveValue,
-} from "../utils";
-import type { ResponsiveValues } from "../types";
+import { computeGridLayout, computeGridPlaceholderCount } from "../utils";
+import { resolveResponsive } from "../tiers";
+import type { Responsive } from "../types";
 
 type ResponsiveGridProps = ViewProps & {
   children: React.ReactNode;
@@ -28,10 +25,9 @@ type ResponsiveGridProps = ViewProps & {
    * Or responsive, one count per breakpoint:
    *
    * columns={{
-   *   small: 1,
-   *   phone: 2,
-   *   tablet: 3,
-   *   largeTablet: 4,
+   *   compact: 2,
+   *   medium: 3,
+   *   expanded: 4,
    * }}
    *
    * Use this when you want a guaranteed, deterministic column count and
@@ -39,7 +35,7 @@ type ResponsiveGridProps = ViewProps & {
    * `minItemWidth` (below) instead when you want the grid to auto-fit as
    * many columns as comfortably fit an unknown/variable container width.
    */
-  columns?: number | ResponsiveValues<number>;
+  columns?: Responsive<number>;
 
   /**
    * Minimum width each grid item should have.
@@ -83,15 +79,14 @@ type ResponsiveGridProps = ViewProps & {
    * Or responsive:
    *
    * itemHeight={{
-   *   small: 100,
-   *   phone: 120,
-   *   tablet: 150,
-   *   largeTablet: 170,
+   *   compact: 120,
+   *   medium: 150,
+   *   expanded: 170,
    * }}
    *
    * Cannot be used together with `aspectRatio`.
    */
-  itemHeight?: number | ResponsiveValues<number>;
+  itemHeight?: Responsive<number>;
 
   /**
    * Aspect ratio for every grid item.
@@ -139,7 +134,7 @@ export function ResponsiveGrid({
    * screen breakpoint like every other responsive value. So with explicit
    * `columns` the very first frame is already correct.
    */
-  const { width: screenWidth, breakpoints } = useResponsive();
+  const { width: screenWidth, tier, breakpoints } = useResponsive();
 
   const { width: measuredWidth, onLayout: handleLayout } =
     useContainerWidth(onLayout);
@@ -216,26 +211,18 @@ export function ResponsiveGrid({
   const { numColumns: columns } = useMemo(
     () =>
       computeGridLayout({
-        // Explicit columns only need the breakpoint tier: use the screen
-        // width so they never wait on (or jump after) measurement.
-        width: columnsProp !== undefined ? screenWidth : width,
+        width,
         columns: columnsProp,
+        // Per-tier columns follow the screen's tier, so explicit columns
+        // never wait on (or jump after) measurement.
+        tier,
         minItemWidth,
         gap,
         minColumns,
         maxColumns,
         breakpoints,
       }),
-    [
-      columnsProp,
-      screenWidth,
-      width,
-      breakpoints,
-      minItemWidth,
-      gap,
-      minColumns,
-      maxColumns,
-    ],
+    [columnsProp, width, tier, breakpoints, minItemWidth, gap, minColumns, maxColumns],
   );
 
   /**
@@ -248,26 +235,19 @@ export function ResponsiveGrid({
    * and:
    *
    * itemHeight={{
-   *   small: 100,
-   *   phone: 120,
-   *   tablet: 150,
+   *   compact: 120,
+   *   medium: 150,
    * }}
    *
-   * responsiveValue() handles partial responsive
+   * resolveResponsive() handles partial responsive
    * configurations by cascading to the nearest
-   * available value.
+   * smaller tier.
    */
-  const resolvedItemHeight = useMemo(() => {
-    if (itemHeight === undefined) {
-      return undefined;
-    }
-
-    if (typeof itemHeight === "number") {
-      return itemHeight;
-    }
-
-    return responsiveValue(screenWidth, itemHeight, undefined, breakpoints);
-  }, [screenWidth, itemHeight, breakpoints]);
+  const resolvedItemHeight = useMemo(
+    () =>
+      itemHeight === undefined ? undefined : resolveResponsive(itemHeight, tier),
+    [itemHeight, tier],
+  );
 
   /**
    * Remove null/false/non-element children so that

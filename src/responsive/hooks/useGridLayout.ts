@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useResponsive } from "./useResponsive";
 import { computeGridLayout, type GridLayoutOptions } from "../utils";
 
-export type UseGridLayoutOptions = Omit<GridLayoutOptions, "width" | "breakpoints"> & {
+export type UseGridLayoutOptions = Omit<GridLayoutOptions, "width" | "tier" | "breakpoints"> & {
   /**
    * Width available to the list. Defaults to the window width — pass the
    * value from useContainerWidth() when the list sits inside padding.
@@ -34,7 +34,7 @@ export function useGridLayout({
   minColumns,
   maxColumns,
 }: UseGridLayoutOptions = {}) {
-  const { width: windowWidth, breakpoints } = useResponsive();
+  const { width: windowWidth, tier, breakpoints } = useResponsive();
   const width = widthOption ?? windowWidth;
 
   return useMemo(
@@ -42,12 +42,14 @@ export function useGridLayout({
       computeGridLayout({
         width,
         columns,
+        // Per-tier columns follow the screen tier, like ResponsiveGrid.
+        tier,
         minItemWidth,
         gap,
         minColumns,
         maxColumns,
         breakpoints,
       }),
-    [width, columns, minItemWidth, gap, minColumns, maxColumns, breakpoints],
+    [width, columns, tier, minItemWidth, gap, minColumns, maxColumns, breakpoints],
   );
 }
