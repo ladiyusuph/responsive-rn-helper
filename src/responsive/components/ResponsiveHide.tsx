@@ -4,9 +4,9 @@ import { matchesBreakpointCondition } from "../utils";
 import type { BreakpointCondition } from "../types";
 
 /**
- * Renders children except when the current deviceType matches the condition
+ * Renders children except when the current tier matches the condition
  * — the inverse of ResponsiveShow.
- * e.g. <ResponsiveHide below="tablet">Sidebar-only content</ResponsiveHide>
+ * e.g. <ResponsiveHide below="medium">Sidebar-only content</ResponsiveHide>
  */
 export function ResponsiveHide({
   children,
@@ -14,9 +14,9 @@ export function ResponsiveHide({
   below,
   only,
 }: BreakpointCondition & { children: React.ReactNode }) {
-  const { deviceType } = useResponsive();
+  const { width, breakpoints } = useResponsive();
 
-  if (matchesBreakpointCondition(deviceType, { above, below, only })) {
+  if (matchesBreakpointCondition(width, { above, below, only }, breakpoints)) {
     return null;
   }
 

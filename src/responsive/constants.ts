@@ -1,200 +1,132 @@
 import type {
-  Breakpoints,
-  FluidConfig,
-  LayoutConfig,
-  ResponsiveRadiiConfig,
-  ResponsiveSpacingConfig,
-  ResponsiveTypographyConfig,
+  DefaultIconSizeKey,
+  DefaultRadiiKey,
+  DefaultSizeKey,
+  DefaultSpacingKey,
+  DefaultTextVariantKey,
+  DefaultTypographyKey,
+  FluidToken,
+  Responsive,
+  TextVariant,
+  TokenValue,
 } from "./types";
 
-/**
- * BREAKPOINTS
- * Justification: Based on Material Design 3 layout breakpoints.
- * - smallPhone (320): Only genuinely narrow widths (iPhone SE 1st gen, compact
- *   Androids, or a narrow container). Kept below 360 on purpose: a row inside a
- *   16px-padded container on a 390pt iPhone measures 358, and should not stack.
- * - phone (600): The M3 "Medium" breakpoint (Portrait tablets, large foldables).
- * - tablet (840): The M3 "Expanded" breakpoint (Landscape tablets, small laptops).
- */
-export const DEFAULT_BREAKPOINTS: Breakpoints = {
-  smallPhone: 320,
-  phone: 600,
-  tablet: 840,
-};
+export { DEFAULT_BREAKPOINTS, DEFAULT_STACK_BELOW } from "./tiers";
 
 /**
- * BASE SPACING
- * Justification: Strict adherence to the 8pt spatial system.
- * Using multiples of 8 (with 4 for micro-adjustments) ensures clean pixel
- * rendering and consistent visual rhythm across iOS and Android.
+ * Smoothly scales between `min` and `max` as the window grows from `from`
+ * (default 320) to `to` (default: the `expanded` breakpoint) — the direct
+ * equivalent of CSS clamp(min, <fluid>, max).
+ *
+ * sizes: { buttonHeight: fluid(48, 56) }
+ */
+export function fluid(
+  min: number,
+  max: number,
+  range?: { from?: number; to?: number },
+): FluidToken {
+  return { kind: "fluid", min, max, from: range?.from, to: range?.to };
+}
+
+/**
+ * SPACING
+ * A static 4/8pt scale (xs–xxxl) plus semantic, responsive tokens.
+ * - screen: edge padding. 16 on phones (iOS & Android standard), more on tablets.
+ * - section: separation between page sections.
+ * - card: padding inside cards (Material cards use 16).
+ * - gap: space between items in rows and grids.
+ * - input: horizontal padding inside text inputs.
  */
 export const DEFAULT_SPACING = {
-  xs: 4, // Micro-adjustments
-  sm: 8, // Minimum standard gap
-  md: 12, // Half-step gap
-  lg: 16, // Default padding (Material standard)
-  xl: 20, // Slightly looser padding
-  xxl: 24, // Tablet padding standard
-  xxxl: 32, // Large section gaps
-} as const;
-
-export const DEFAULT_RESPONSIVE_SPACING: ResponsiveSpacingConfig = {
-  // Screen edges: 16px is standard for mobile (iOS & Android). 24px+ for tablets.
-  screen: { small: 16, phone: 16, tablet: 24, largeTablet: 32 },
-  // Sections: Needs distinct visual separation. 24px on mobile, 32px+ on larger screens.
-  section: { small: 24, phone: 24, tablet: 32, largeTablet: 40 },
-  // Cards: Material cards typically use 16px padding internally.
-  card: { small: 12, phone: 16, tablet: 20, largeTablet: 24 },
-  // Gaps: Default grid gaps.
-  gap: { small: 8, phone: 12, tablet: 16, largeTablet: 20 },
-};
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+  screen: { compact: 16, medium: 24, expanded: 32 },
+  section: { compact: 24, medium: 32, expanded: 40 },
+  card: { compact: 16, medium: 20, expanded: 24 },
+  gap: { compact: 12, medium: 16, expanded: 24 },
+  input: { compact: 16, medium: 20 },
+} satisfies Record<DefaultSpacingKey, TokenValue>;
 
 /**
- * RADII (Border Radius)
- * Justification: Matches modern UI trends (e.g., iOS squircles, Material 3 Shape tokens).
- * 8: Small components (tags/chips) | 12: Buttons | 16: Cards | 24+: Modals/Bottom Sheets
+ * RADII
+ * 8: chips/tags | 12: buttons | 16: cards | 24+: modals and sheets, which get
+ * rounder on bigger screens so they look less boxy.
  */
 export const DEFAULT_RADII = {
   sm: 8,
   md: 12,
   lg: 16,
   xl: 20,
-  xxl: 24,
-} as const;
-
-export const DEFAULT_RESPONSIVE_RADII: ResponsiveRadiiConfig = {
-  sm: { small: 8, phone: 8, tablet: 8, largeTablet: 8 },
-  md: { small: 12, phone: 12, tablet: 12, largeTablet: 12 },
-  lg: { small: 16, phone: 16, tablet: 16, largeTablet: 16 },
-  xl: { small: 20, phone: 20, tablet: 20, largeTablet: 20 },
-  // Modals/Cards often get rounder on bigger screens to look less boxy
-  xxl: { small: 24, phone: 24, tablet: 28, largeTablet: 32 },
-};
+  xxl: { compact: 24, medium: 28, expanded: 32 },
+} satisfies Record<DefaultRadiiKey, TokenValue>;
 
 /**
- * TYPOGRAPHY
- * Justification:
- * - WCAG requires body text to be 16px (1rem) for baseline readability. iOS HIG uses 17pt.
- * - 12px is the absolute accessible minimum for legal/caption text.
- * - Scaling: Text doesn't need to scale massively on tablets because users hold them
- *   further away, but headers should scale up to fill the visual space.
+ * TYPOGRAPHY (font sizes)
+ * Body text doesn't need to grow much on tablets (they're held further
+ * away), but headings scale up to fill the space.
  */
-export const DEFAULT_TYPOGRAPHY: ResponsiveTypographyConfig = {
-  xxs: {
-    small: 9,
-    phone: 10,
-    tablet: 10,
-    largeTablet: 10,
-  },
+export const DEFAULT_TYPOGRAPHY = {
+  xxs: 10,
+  xs: { compact: 11, medium: 12, expanded: 13 },
+  sm: { compact: 12, medium: 13, expanded: 14 },
+  md: { compact: 14, medium: 15, expanded: 16 },
+  lg: { compact: 16, medium: 18, expanded: 20 },
+  xl: { compact: 18, medium: 20, expanded: 22 },
+  xxl: { compact: 20, medium: 22, expanded: 24 },
+  "2xl": { compact: 22, medium: 28, expanded: 32 },
+  "3xl": { compact: 26, medium: 32, expanded: 40 },
+} satisfies Record<DefaultTypographyKey, TokenValue>;
 
-  xs: {
-    small: 10,
-    phone: 11,
-    tablet: 12,
-    largeTablet: 13,
-  },
+/**
+ * TEXT VARIANTS
+ * Ready-made text styles built on the typography scale. `lineHeight` is a
+ * multiplier: tighter for large display text, looser for body copy.
+ */
+export const DEFAULT_TEXT = {
+  caption: { fontSize: "xs", lineHeight: 1.4 },
+  label: { fontSize: "sm", lineHeight: 1.4, fontWeight: "500" },
+  body: { fontSize: "md", lineHeight: 1.5 },
+  bodyLarge: { fontSize: "lg", lineHeight: 1.5 },
+  title: { fontSize: "xl", lineHeight: 1.3, fontWeight: "600" },
+  heading: { fontSize: "2xl", lineHeight: 1.25, fontWeight: "700" },
+  display: { fontSize: "3xl", lineHeight: 1.2, fontWeight: "700" },
+} satisfies Record<DefaultTextVariantKey, TextVariant>;
 
-  sm: {
-    small: 12,
-    phone: 12,
-    tablet: 13,
-    largeTablet: 14,
-  },
+/**
+ * ICONS
+ * 24x24 is the standard icon bounding box (Material, Apple, web).
+ */
+export const DEFAULT_ICON_SIZES = {
+  xs: { compact: 16, medium: 18, expanded: 20 },
+  sm: { compact: 20, medium: 22, expanded: 24 },
+  md: { compact: 24, expanded: 28 },
+  lg: { compact: 32, medium: 36, expanded: 40 },
+  xl: { compact: 40, medium: 48, expanded: 56 },
+} satisfies Record<DefaultIconSizeKey, TokenValue>;
 
-  md: {
-    small: 13,
-    phone: 14,
-    tablet: 15,
-    largeTablet: 16,
-  },
+/**
+ * SIZES
+ * Accessible touch targets: Apple HIG requires 44pt, Material 3 and WCAG
+ * 2.1 AAA 48dp. Controls should never be shorter than 48 on mobile.
+ */
+export const DEFAULT_SIZES = {
+  buttonHeight: fluid(48, 56, { from: 320, to: 900 }),
+  inputHeight: { compact: 48, medium: 52, expanded: 56 },
+} satisfies Record<DefaultSizeKey, TokenValue>;
 
-  lg: {
-    small: 15,
-    phone: 16,
-    tablet: 18,
-    largeTablet: 20,
-  },
-
-  xl: {
-    small: 17,
-    phone: 18,
-    tablet: 20,
-    largeTablet: 22,
-  },
-
-  xxl: {
-    small: 20,
-    phone: 20,
-    tablet: 22,
-    largeTablet: 24,
-  },
-
-  "2xl": {
-    small: 22,
-    phone: 22,
-    tablet: 28,
-    largeTablet: 32,
-  },
-
-  "3xl": {
-    small: 26,
-    phone: 26,
-    tablet: 32,
-    largeTablet: 40,
-  },
+export const DEFAULT_LAYOUT: { containerMaxWidth: Responsive<number | undefined> } = {
+  // Keeps long lines readable on wide screens.
+  containerMaxWidth: { medium: 800, expanded: 1040 },
 };
-export const DEFAULT_LAYOUT: LayoutConfig = {
-  // Mobile standards generally use 16px safe-area margins.
-  horizontalPadding: { small: 16, phone: 16, tablet: 24, largeTablet: 32 },
-  contentMaxWidth: {
-    small: undefined,
-    phone: undefined,
-    tablet: 800,
-    largeTablet: 1040, // M3 standard for max content width to prevent eye strain on long text
-  },
-  gap: { small: 8, phone: 12, tablet: 16, largeTablet: 24 },
-  sectionGap: { small: 24, phone: 24, tablet: 32, largeTablet: 40 },
-  cardPadding: { small: 16, phone: 16, tablet: 20, largeTablet: 24 },
-  borderRadius: { small: 16, phone: 16, tablet: 24, largeTablet: 24 },
-  actionColumns: { small: 1, phone: 2, tablet: 2, largeTablet: 3 },
-  statColumns: { small: 1, phone: 2, tablet: 4, largeTablet: 4 }, // Stats look good in a row of 4 on tablets
 
-  /**
-   * ACCESSIBLE TOUCH TARGETS
-   * Justification: Apple HIG requires a minimum of 44x44pt. Material Design 3 and
-   * WCAG 2.1 Target Size (Level AAA) require a minimum of 48x48dp.
-   * Buttons and Inputs should *never* be smaller than 48 height on mobile.
-   */
-  buttonHeight: {
-    minWidth: 320,
-    maxWidth: 900,
-    minValue: 48, // Accessible minimum
-    maxValue: 56, // M3 standard for prominent buttons
-  } satisfies FluidConfig,
-
-  inputHeight: {
-    small: 48, // Accessibility constraint: 48dp minimum touch target
-    phone: 48,
-    tablet: 52,
-    largeTablet: 56, // Standard desktop/large input size
-  },
-
-  inputPaddingHorizontal: {
-    small: 16, // Visual balance for a 48px high input
-    phone: 16,
-    tablet: 20,
-    largeTablet: 20,
-  },
-
-  /**
-   * ICONS
-   * Justification: 24x24 is the universal standard bounding box for icons (Material, Apple, Web).
-   */
-  iconSize: {
-    xs: { small: 16, phone: 16, tablet: 18, largeTablet: 20 }, // Inline with small text
-    sm: { small: 20, phone: 20, tablet: 22, largeTablet: 24 }, // Slightly smaller than standard
-    md: { small: 24, phone: 24, tablet: 24, largeTablet: 28 }, // 24 standard icon size
-    lg: { small: 32, phone: 32, tablet: 36, largeTablet: 40 }, // Prominent icons / Empty states
-    xl: { small: 40, phone: 40, tablet: 48, largeTablet: 56 }, // Hero icons
-  },
+/** Values behind deprecated 1.x tokens that have no 2.0 equivalent. */
+export const DEFAULT_LEGACY_TOKENS = {
+  borderRadius: { compact: 16, medium: 24 },
+  actionColumns: { compact: 2, expanded: 3 },
+  statColumns: { compact: 2, medium: 4 },
 };

@@ -28,16 +28,30 @@ describe("computeGridLayout", () => {
     ).toBe(2);
   });
 
-  it("resolves responsive columns per breakpoint", () => {
-    const columns = { small: 1, phone: 2, tablet: 3, largeTablet: 4 };
+  it("resolves responsive columns per tier", () => {
+    const columns = { compact: 2, medium: 3, expanded: 4, large: 6 };
     const at = (width: number) =>
       computeGridLayout({ width, columns, breakpoints: DEFAULT_BREAKPOINTS })
         .numColumns;
 
-    expect(at(300)).toBe(1);
     expect(at(390)).toBe(2);
     expect(at(700)).toBe(3);
     expect(at(1024)).toBe(4);
+    expect(at(1366)).toBe(6);
+  });
+
+  it("uses an explicit tier for per-tier columns when given", () => {
+    // ResponsiveGrid passes the screen's tier while width is the container's.
+    expect(
+      computeGridLayout({ width: 560, columns: { compact: 2, medium: 3 }, tier: "medium" })
+        .numColumns,
+    ).toBe(3);
+  });
+
+  it("still accepts 1.x keys in per-tier columns", () => {
+    expect(
+      computeGridLayout({ width: 700, columns: { phone: 2, tablet: 3 } }).numColumns,
+    ).toBe(3);
   });
 
   it("clamps auto-fit to minColumns / maxColumns", () => {

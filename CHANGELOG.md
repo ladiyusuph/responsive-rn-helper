@@ -2,6 +2,45 @@
 
 All notable changes to this project are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] — 2.0.0
+
+A responsive design system rather than a set of helpers. **1.x code keeps working**: renamed APIs are deprecated, not removed. See [MIGRATION.md](MIGRATION.md).
+
+### Added
+
+- **Tiers** `compact` / `medium` / `expanded` / `large` (Material 3 window size classes), with mobile-first resolution. New `large` tier from 1200.
+- **Token groups** `spacing` (static scale + semantic), `radii`, `typography`, `iconSizes`, `sizes` — each token a number, a per-tier map, or `fluid(min, max)`.
+- **Text variants** (`text`): complete text styles with font size, line-height multiplier and weight. Defaults: `caption`, `label`, `body`, `bodyLarge`, `title`, `heading`, `display`.
+- **Custom tokens with types**: add any token name to any group; `defineConfig()` + `declare module … { interface Register { config: typeof config } }` makes them typed everywhere.
+- **`createStyles()`**: StyleSheet-style factory that receives all tokens and accepts per-tier style values, fully typed.
+- `useResponsive()` / `useLayout()`: `tier`, `isAtLeast(tier)`, `isBelow(tier)`.
+- `useLayout()`: `containerMaxWidth`, `sizes`, `text`, `iconSizes`.
+- Hooks `useResponsiveSizes()` and `useTextVariants()`.
+- `fluid()` token helper.
+- Pure helpers `getTier`, `resolveResponsive`, `resolveBreakpoints`, `normalizeConfig`, `resolveTokens`, `resolveStyles`, `computeWindowClass`.
+- ES module build (`dist/esm`, via the `module` field) next to CommonJS (`dist/cjs`).
+- MIGRATION.md.
+
+### Changed
+
+- Every value now lives in exactly one token group (1.x had `spacing.card` and `layout.cardPadding`, `spacing.gap` and `layout.gap`, etc., with different defaults). `ResponsiveContainer` uses `spacing.screen` and `layout.containerMaxWidth`; `ResponsiveRow` uses `spacing.gap`.
+- Defaults: `compact` uses 1.x's phone values. `spacing.gap` is 24 from `expanded` (was 20 in `spacing`, 24 in `layout`); `spacing.card` is 16 on compact (was 12 on small phones).
+- Token group hooks only re-render when the tier changes (or on width changes, for groups with fluid tokens).
+- Build output moved to `dist/cjs`, `dist/esm` and `dist/types`.
+
+### Deprecated (still working, removed in 3.0)
+
+- 1.x tier keys `small` / `phone` / `tablet` / `largeTablet` in responsive values, and device names in `ResponsiveShow` / `ResponsiveHide`.
+- Breakpoints `smallPhone` / `phone` / `tablet`.
+- Flat `useLayout()` tokens (`horizontalPadding`, `cardPadding`, `gap`, …) and `useResponsive()` flags (`deviceType`, `isPhone`, `isTablet`, …).
+- `layout.*` config keys that moved to token groups, and `{ minWidth, maxWidth, minValue, maxValue }` fluid configs.
+- `responsiveValue()`, `computeBreakpointFlags()`, `matchesBreakpointCondition(deviceType, …)`, types `DeviceType` and `ResponsiveConfigOverrides`.
+
+### Removed
+
+- `computeLayoutTokens()`, `DEFAULT_RESPONSIVE_SPACING`, `DEFAULT_RESPONSIVE_RADII`, and the 1.x config types (`LayoutConfig`, `ResponsiveSpacingConfig`, …).
+- The sub-320 `small` tier: `small` values map to `compact`, used only when there's no `phone` value.
+
 ## [Unreleased] — 1.1.0
 
 ### Added

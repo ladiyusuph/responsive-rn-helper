@@ -2,10 +2,14 @@ import React from "react";
 import { View, type ViewProps } from "react-native";
 import { useLayout } from "../hooks/useLayout";
 
+/**
+ * Centers content with the responsive `spacing.screen` padding, capped at
+ * `layout.containerMaxWidth` on wide screens.
+ */
 export function ResponsiveContainer({
   children, style, ...props
 }: ViewProps & { children: React.ReactNode }) {
-  const { horizontalPadding, contentMaxWidth } = useLayout();
+  const { spacing, containerMaxWidth } = useLayout();
 
   return (
     <View
@@ -13,9 +17,9 @@ export function ResponsiveContainer({
       style={[
         {
           width: "100%",
-          maxWidth: contentMaxWidth,
+          maxWidth: containerMaxWidth,
           alignSelf: "center",
-          paddingHorizontal: horizontalPadding,
+          paddingHorizontal: spacing.screen,
         },
         style,
       ]}

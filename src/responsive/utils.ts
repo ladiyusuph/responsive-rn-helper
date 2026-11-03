@@ -1,236 +1,115 @@
-import { DEFAULT_BREAKPOINTS, DEFAULT_LAYOUT } from "./constants";
+import { warnDeprecated } from "./legacy";
+import {
+  ensureResolvedBreakpoints,
+  getLegacyDeviceType,
+  getTier,
+  resolveResponsive,
+  tierIndex,
+} from "./tiers";
 import type {
-  Breakpoints,
   BreakpointCondition,
+  BreakpointsInput,
   DeviceType,
   FluidConfig,
   FormFactor,
-  LayoutConfig,
-  ResponsiveRadiiConfig,
-  ResponsiveSizeValuesConfig,
-  ResponsiveSpacingConfig,
-  ResponsiveTypographyConfig,
+  ResolvedBreakpoints,
+  Responsive,
   ResponsiveValues,
+  Tier,
 } from "./types";
 
+/**
+ * @deprecated 2.0: use `resolveResponsive(values, tier, fallback)` with
+ * `getTier(width, breakpoints)`, or the useResponsiveValue() hook.
+ */
 export function responsiveValue<T>(
   width: number,
   values: ResponsiveValues<T>,
   fallback: T,
-  breakpoints: Breakpoints,
+  breakpoints: BreakpointsInput | ResolvedBreakpoints,
 ): T {
-  if (width >= breakpoints.tablet) {
-    return (
-      values.largeTablet ??
-      values.tablet ??
-      values.phone ??
-      values.small ??
-      fallback
-    );
-  }
-
-  if (width >= breakpoints.phone) {
-    return values.tablet ?? values.phone ?? values.small ?? fallback;
-  }
-
-  if (width >= breakpoints.smallPhone) {
-    return values.phone ?? values.small ?? fallback;
-  }
-
-  return values.small ?? values.phone ?? fallback;
+  warnDeprecated("responsiveValue", "responsiveValue() is now resolveResponsive()");
+  return resolveResponsive(values, getTier(width, ensureResolvedBreakpoints(breakpoints)), fallback);
 }
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-export type BreakpointFlags = {
-  isSmallPhone: boolean;
-  /** True for small-phone AND phone widths (i.e. "at most phone-sized"). */
-  isPhone: boolean;
-  /** True for tablet AND large-tablet widths (i.e. "at least tablet-sized"). */
-  isTablet: boolean;
-  isLargeTablet: boolean;
+export type WindowClass = {
+  tier: Tier;
   isLandscape: boolean;
-  deviceType: DeviceType;
   /** min(width, height) — stays the same when the device rotates. */
   shortestSide: number;
   /**
    * Physical device class, independent of orientation. A phone held in
-   * landscape is often wider than the `tablet` breakpoint (e.g. 852pt on an
-   * iPhone 15), so `deviceType` alone would call it a large tablet. Use
+   * landscape is often wider than the `expanded` breakpoint (e.g. 852pt on
+   * an iPhone 15), so `tier` alone can't tell it from a tablet. Use
    * `formFactor` when you mean "is this hardware a phone or a tablet?".
    */
   formFactor: FormFactor;
 };
 
 /**
- * Pure breakpoint classification, extracted so it can be unit tested without
- * mounting a component. isPhone/isTablet are intentionally cumulative
- * ("at most"/"at least") — use deviceType when you need a single mutually
- * exclusive bucket, or isLargeTablet/isSmallPhone for the exact edges.
+ * Pure window classification, extracted so it can be unit tested without
+ * mounting a component.
+ */
+export function computeWindowClass(
+  width: number,
+  height: number,
+  breakpoints: ResolvedBreakpoints,
+): WindowClass {
+  const shortestSide = Math.min(width, height);
+
+  return {
+    tier: getTier(width, breakpoints),
+    isLandscape: width > height,
+    shortestSide,
+    formFactor: shortestSide >= breakpoints.medium ? "tablet" : "phone",
+  };
+}
+
+/** The 1.x breakpoint flags, still available (deprecated) on useResponsive(). */
+export type LegacyBreakpointFlags = {
+  /** @deprecated 2.0: there's no tier below `compact`. */
+  isSmallPhone: boolean;
+  /** @deprecated 2.0: use `tier === "compact"` or `isBelow("medium")`. */
+  isPhone: boolean;
+  /** @deprecated 2.0: use `isAtLeast("medium")`. */
+  isTablet: boolean;
+  /** @deprecated 2.0: use `isAtLeast("expanded")`. */
+  isLargeTablet: boolean;
+  /** @deprecated 2.0: use `tier`. */
+  deviceType: DeviceType;
+};
+
+export function computeLegacyFlags(
+  width: number,
+  breakpoints: ResolvedBreakpoints,
+): LegacyBreakpointFlags {
+  return {
+    isSmallPhone: width < breakpoints.smallPhone,
+    isPhone: width < breakpoints.medium,
+    isTablet: width >= breakpoints.medium,
+    isLargeTablet: width >= breakpoints.expanded,
+    deviceType: getLegacyDeviceType(width, breakpoints),
+  };
+}
+
+/**
+ * @deprecated 2.0: use `computeWindowClass()`, which returns `tier` in place
+ * of the 1.x device flags.
  */
 export function computeBreakpointFlags(
   width: number,
   height: number,
-  breakpoints: Breakpoints,
-): BreakpointFlags {
-  const isSmallPhone = width < breakpoints.smallPhone;
-  const isPhone = width < breakpoints.phone;
-  const isTablet = width >= breakpoints.phone;
-  const isLargeTablet = width >= breakpoints.tablet;
-  const shortestSide = Math.min(width, height);
-
-  const deviceType: DeviceType =
-    width < breakpoints.smallPhone
-      ? "small-phone"
-      : width < breakpoints.phone
-        ? "phone"
-        : width < breakpoints.tablet
-          ? "tablet"
-          : "large-tablet";
+  breakpoints: BreakpointsInput | ResolvedBreakpoints,
+): WindowClass & LegacyBreakpointFlags {
+  const resolved = ensureResolvedBreakpoints(breakpoints);
 
   return {
-    isSmallPhone,
-    isPhone,
-    isTablet,
-    isLargeTablet,
-    isLandscape: width > height,
-    deviceType,
-    shortestSide,
-    formFactor: shortestSide >= breakpoints.phone ? "tablet" : "phone",
-  };
-}
-
-export type LayoutTokens = {
-  horizontalPadding: number;
-  contentMaxWidth: number | undefined;
-  gap: number;
-  sectionGap: number;
-  cardPadding: number;
-  borderRadius: number;
-  actionColumns: number;
-  statColumns: number;
-  buttonHeight: number;
-  inputHeight: number;
-  inputPaddingHorizontal: number;
-  iconSize: IconSizeTokens;
-};
-
-/**
- * Pure derivation of layout tokens from breakpoint flags. Every tier check
- * that has a large-tablet value must check isLargeTablet BEFORE isTablet,
- * since isTablet stays true for large tablets too (see BreakpointFlags).
- */
-export function computeLayoutTokens(
-  _flags: BreakpointFlags,
-  width: number,
-  layout: LayoutConfig = DEFAULT_LAYOUT,
-  breakpoints: Breakpoints = DEFAULT_BREAKPOINTS,
-): LayoutTokens {
-  const resolve = <T>(values: ResponsiveValues<T>, fallback: T): T =>
-    responsiveValue(width, values, fallback, breakpoints);
-
-  return {
-    horizontalPadding: resolve(layout.horizontalPadding, 16),
-
-    contentMaxWidth: resolve(layout.contentMaxWidth, undefined),
-
-    gap: resolve(layout.gap, 12),
-
-    sectionGap: resolve(layout.sectionGap, 20),
-
-    cardPadding: resolve(layout.cardPadding, 16),
-
-    borderRadius: resolve(layout.borderRadius, 20),
-
-    actionColumns: resolve(layout.actionColumns, 2),
-
-    statColumns: resolve(layout.statColumns, 2),
-
-    buttonHeight: fluidValue(width, layout.buttonHeight),
-
-    inputHeight: resolve(layout.inputHeight ?? {}, 46),
-
-    inputPaddingHorizontal: resolve(layout.inputPaddingHorizontal ?? {}, 14),
-
-    iconSize: computeIconSizeTokens(width, layout.iconSize, breakpoints),
-  };
-}
-
-export type SpacingTokens = Record<keyof ResponsiveSpacingConfig, number>;
-export type TypographyTokens = Record<keyof ResponsiveTypographyConfig, number>;
-export type RadiiTokens = Record<keyof ResponsiveRadiiConfig, number>;
-export type IconSizeTokens = Record<keyof ResponsiveSizeValuesConfig<number>, number>;
-
-export function computeSpacingTokens(
-  width: number,
-  spacing: ResponsiveSpacingConfig,
-  breakpoints: Breakpoints,
-): SpacingTokens {
-  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
-    responsiveValue(width, values, fallback, breakpoints);
-
-  return {
-    screen: resolve(spacing.screen, 16),
-    section: resolve(spacing.section, 20),
-    card: resolve(spacing.card, 16),
-    gap: resolve(spacing.gap, 12),
-  };
-}
-
-export function computeTypographyTokens(
-  width: number,
-  typography: ResponsiveTypographyConfig,
-  breakpoints: Breakpoints,
-): TypographyTokens {
-  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
-    responsiveValue(width, values, fallback, breakpoints);
-
-  return {
-    xxs: resolve(typography.xxs, 9),
-    xs: resolve(typography.xs, 10),
-    sm: resolve(typography.sm, 12),
-    md: resolve(typography.md, 14),
-    lg: resolve(typography.lg, 16),
-    xl: resolve(typography.xl, 18),
-    xxl: resolve(typography.xxl, 20),
-    "2xl": resolve(typography["2xl"], 22),
-    "3xl": resolve(typography["3xl"], 26),
-  };
-}
-
-export function computeRadiiTokens(
-  width: number,
-  radii: ResponsiveRadiiConfig,
-  breakpoints: Breakpoints,
-): RadiiTokens {
-  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
-    responsiveValue(width, values, fallback, breakpoints);
-
-  return {
-    sm: resolve(radii.sm, 8),
-    md: resolve(radii.md, 12),
-    lg: resolve(radii.lg, 16),
-    xl: resolve(radii.xl, 20),
-    xxl: resolve(radii.xxl, 24),
-  };
-}
-
-export function computeIconSizeTokens(
-  width: number,
-  iconSize: ResponsiveSizeValuesConfig<number>,
-  breakpoints: Breakpoints,
-): IconSizeTokens {
-  const resolve = (values: ResponsiveValues<number>, fallback: number) =>
-    responsiveValue(width, values, fallback, breakpoints);
-
-  return {
-    xs: resolve(iconSize.xs, 14),
-    sm: resolve(iconSize.sm, 18),
-    md: resolve(iconSize.md, 22),
-    lg: resolve(iconSize.lg, 26),
-    xl: resolve(iconSize.xl, 30),
+    ...computeWindowClass(width, height, resolved),
+    ...computeLegacyFlags(width, resolved),
   };
 }
 
@@ -308,7 +187,12 @@ export type GridLayoutOptions = {
   /** Width available to the grid (measured container width, ideally). */
   width: number;
   /** Explicit column count — bypasses auto-fit when provided. */
-  columns?: number | ResponsiveValues<number>;
+  columns?: Responsive<number>;
+  /**
+   * Tier used to resolve per-tier `columns`. Defaults to the tier of
+   * `width`; ResponsiveGrid passes the screen's tier.
+   */
+  tier?: Tier;
   /** @default 160 */
   minItemWidth?: number;
   /** @default 12 */
@@ -316,7 +200,7 @@ export type GridLayoutOptions = {
   /** @default 1 */
   minColumns?: number;
   maxColumns?: number;
-  breakpoints?: Breakpoints;
+  breakpoints?: BreakpointsInput | ResolvedBreakpoints;
 };
 
 export type GridLayout = {
@@ -334,18 +218,21 @@ export type GridLayout = {
 export function computeGridLayout({
   width,
   columns,
+  tier,
   minItemWidth = 160,
   gap = 12,
   minColumns = 1,
   maxColumns,
-  breakpoints = DEFAULT_BREAKPOINTS,
+  breakpoints,
 }: GridLayoutOptions): GridLayout {
   const numColumns =
     columns !== undefined
       ? normalizeColumnCount(
-          typeof columns === "number"
-            ? columns
-            : responsiveValue(width, columns, 1, breakpoints),
+          resolveResponsive(
+            columns,
+            tier ?? getTier(width, ensureResolvedBreakpoints(breakpoints)),
+            1,
+          ),
         )
       : resolveGridColumns(
           computeGridColumns(width, minItemWidth, gap),
@@ -377,6 +264,7 @@ export function shouldStackRow(
 
   return width < stackBelowWidth;
 }
+
 /**
  * Smooth CSS clamp()-style interpolation: `minValue` at `minWidth` and below,
  * `maxValue` at `maxWidth` and above, linearly interpolated in between.
@@ -394,36 +282,93 @@ export function fluidValue(width: number, config: FluidConfig): number {
   return minValue + progress * (maxValue - minValue);
 }
 
-const DEVICE_TYPE_ORDER: DeviceType[] = [
+const LEGACY_DEVICE_ORDER: DeviceType[] = [
   "small-phone",
   "phone",
   "tablet",
   "large-tablet",
 ];
 
+/** The tier a 1.x device type falls in, for matching tier names against it. */
+const DEVICE_TYPE_TIER: Record<DeviceType, Tier> = {
+  "small-phone": "compact",
+  phone: "compact",
+  tablet: "medium",
+  "large-tablet": "expanded",
+};
+
+function isDeviceType(name: Tier | DeviceType): name is DeviceType {
+  return name in DEVICE_TYPE_TIER;
+}
+
+type WindowPosition = { tier: Tier; deviceType: DeviceType };
+
+/**
+ * Compares one condition name against the window. Tier names compare by
+ * tier; 1.x device names compare by the 1.x device type, so existing
+ * conditions behave exactly as they did in 1.x.
+ */
+function compare(position: WindowPosition, name: Tier | DeviceType): number {
+  if (isDeviceType(name)) {
+    warnDeprecated(
+      "condition-device-type",
+      "ResponsiveShow/ResponsiveHide device names should be tiers (compact/medium/expanded/large)",
+    );
+    return (
+      LEGACY_DEVICE_ORDER.indexOf(position.deviceType) -
+      LEGACY_DEVICE_ORDER.indexOf(name)
+    );
+  }
+
+  return tierIndex(position.tier) - tierIndex(name);
+}
+
 /**
  * Pure matcher behind ResponsiveShow/ResponsiveHide. `only` takes precedence
  * over `above`/`below` if both are given; `above`/`below` combine with AND.
  */
 export function matchesBreakpointCondition(
+  width: number,
+  condition: BreakpointCondition,
+  breakpoints?: BreakpointsInput | ResolvedBreakpoints,
+): boolean;
+/** @deprecated 2.0: pass the window width and breakpoints instead of a device type. */
+export function matchesBreakpointCondition(
   deviceType: DeviceType,
   condition: BreakpointCondition,
+): boolean;
+export function matchesBreakpointCondition(
+  widthOrDeviceType: number | DeviceType,
+  condition: BreakpointCondition,
+  breakpoints?: BreakpointsInput | ResolvedBreakpoints,
 ): boolean {
-  if (condition.only !== undefined) {
-    const only = Array.isArray(condition.only)
-      ? condition.only
-      : [condition.only];
-    return only.includes(deviceType);
+  let position: WindowPosition;
+
+  if (typeof widthOrDeviceType === "number") {
+    const resolved = ensureResolvedBreakpoints(breakpoints);
+    position = {
+      tier: getTier(widthOrDeviceType, resolved),
+      deviceType: getLegacyDeviceType(widthOrDeviceType, resolved),
+    };
+  } else {
+    position = {
+      tier: DEVICE_TYPE_TIER[widthOrDeviceType],
+      deviceType: widthOrDeviceType,
+    };
   }
 
-  const order = DEVICE_TYPE_ORDER.indexOf(deviceType);
+  if (condition.only !== undefined) {
+    const only = Array.isArray(condition.only) ? condition.only : [condition.only];
+    return only.some((name) => compare(position, name) === 0);
+  }
+
   let matches = true;
 
   if (condition.above !== undefined) {
-    matches = matches && order >= DEVICE_TYPE_ORDER.indexOf(condition.above);
+    matches = matches && compare(position, condition.above) >= 0;
   }
   if (condition.below !== undefined) {
-    matches = matches && order <= DEVICE_TYPE_ORDER.indexOf(condition.below);
+    matches = matches && compare(position, condition.below) <= 0;
   }
 
   return matches;

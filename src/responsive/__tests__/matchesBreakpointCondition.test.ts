@@ -1,47 +1,63 @@
 import { matchesBreakpointCondition } from "../utils";
-import type { DeviceType } from "../types";
+import { DEFAULT_BREAKPOINTS } from "../constants";
+
+// compact < 600 ≤ medium < 840 ≤ expanded < 1200 ≤ large
+const bp = DEFAULT_BREAKPOINTS;
+const COMPACT = 390;
+const MEDIUM = 700;
+const EXPANDED = 1000;
+const LARGE = 1366;
 
 describe("matchesBreakpointCondition", () => {
   it("matches 'above' inclusively", () => {
-    expect(matchesBreakpointCondition("tablet", { above: "tablet" })).toBe(true);
-    expect(matchesBreakpointCondition("large-tablet", { above: "tablet" })).toBe(true);
-    expect(matchesBreakpointCondition("phone", { above: "tablet" })).toBe(false);
+    expect(matchesBreakpointCondition(MEDIUM, { above: "medium" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(LARGE, { above: "medium" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(COMPACT, { above: "medium" }, bp)).toBe(false);
   });
 
   it("matches 'below' inclusively", () => {
-    expect(matchesBreakpointCondition("phone", { below: "phone" })).toBe(true);
-    expect(matchesBreakpointCondition("small-phone", { below: "phone" })).toBe(true);
-    expect(matchesBreakpointCondition("tablet", { below: "phone" })).toBe(false);
+    expect(matchesBreakpointCondition(MEDIUM, { below: "medium" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(EXPANDED, { below: "medium" }, bp)).toBe(false);
   });
 
   it("combines above and below as a range (AND)", () => {
-    const range = { above: "phone" as const, below: "tablet" as const };
-    expect(matchesBreakpointCondition("small-phone", range)).toBe(false);
-    expect(matchesBreakpointCondition("phone", range)).toBe(true);
-    expect(matchesBreakpointCondition("tablet", range)).toBe(true);
-    expect(matchesBreakpointCondition("large-tablet", range)).toBe(false);
+    const range = { above: "medium", below: "expanded" } as const;
+    expect(matchesBreakpointCondition(COMPACT, range, bp)).toBe(false);
+    expect(matchesBreakpointCondition(MEDIUM, range, bp)).toBe(true);
+    expect(matchesBreakpointCondition(EXPANDED, range, bp)).toBe(true);
+    expect(matchesBreakpointCondition(LARGE, range, bp)).toBe(false);
   });
 
-  it("matches a single 'only' tier", () => {
-    expect(matchesBreakpointCondition("tablet", { only: "tablet" })).toBe(true);
-    expect(matchesBreakpointCondition("phone", { only: "tablet" })).toBe(false);
+  it("matches 'only' with one tier or several", () => {
+    expect(matchesBreakpointCondition(EXPANDED, { only: "expanded" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(LARGE, { only: "expanded" }, bp)).toBe(false);
+    expect(
+      matchesBreakpointCondition(LARGE, { only: ["expanded", "large"] }, bp),
+    ).toBe(true);
   });
 
-  it("matches an array of 'only' tiers", () => {
-    const condition = { only: ["small-phone", "phone"] as DeviceType[] };
-    expect(matchesBreakpointCondition("small-phone", condition)).toBe(true);
-    expect(matchesBreakpointCondition("phone", condition)).toBe(true);
-    expect(matchesBreakpointCondition("tablet", condition)).toBe(false);
+  it("uses the default breakpoints when none are passed", () => {
+    expect(matchesBreakpointCondition(MEDIUM, { only: "medium" })).toBe(true);
   });
 
-  it("lets 'only' take precedence over above/below if both are given", () => {
-    const condition = { only: "small-phone" as const, above: "tablet" as const };
-    expect(matchesBreakpointCondition("small-phone", condition)).toBe(true);
-    expect(matchesBreakpointCondition("large-tablet", condition)).toBe(false);
+  it("respects custom breakpoints", () => {
+    expect(
+      matchesBreakpointCondition(700, { only: "compact" }, { medium: 768 }),
+    ).toBe(true);
   });
 
-  it("matches everything when no condition is given", () => {
-    expect(matchesBreakpointCondition("small-phone", {})).toBe(true);
-    expect(matchesBreakpointCondition("large-tablet", {})).toBe(true);
+  it("evaluates a 1.x device name exactly as 1.x did", () => {
+    // 1.x "large-tablet" covered everything from 840 up: expanded AND large.
+    expect(matchesBreakpointCondition(LARGE, { only: "large-tablet" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(EXPANDED, { only: "large-tablet" }, bp)).toBe(true);
+    // 1.x "phone" was 320–599.
+    expect(matchesBreakpointCondition(COMPACT, { below: "phone" }, bp)).toBe(true);
+    expect(matchesBreakpointCondition(MEDIUM, { below: "phone" }, bp)).toBe(false);
+  });
+
+  it("allows mixing tier names and 1.x names", () => {
+    const condition = { above: "tablet", below: "expanded" } as const;
+    expect(matchesBreakpointCondition(MEDIUM, condition, bp)).toBe(true);
+    expect(matchesBreakpointCondition(LARGE, condition, bp)).toBe(false);
   });
 });
