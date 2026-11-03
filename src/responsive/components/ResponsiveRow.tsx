@@ -10,11 +10,31 @@ type ResponsiveRowProps = ViewProps & {
 
   /**
    * When true (default), stack children into a column once the row's
-   * available width drops below the `smallPhone` breakpoint.
+   * available width drops below `stackBelow`.
    *
    * @default true
    */
   stackOnSmall?: boolean;
+
+  /**
+   * Width (in px) below which the row stacks. Measured against the row's
+   * own width when `measureContainer` is on.
+   *
+   * stackBelow={480}  // two buttons that need ~240px each
+   *
+   * @default the `smallPhone` breakpoint (320)
+   */
+  stackBelow?: number;
+
+  /**
+   * Also stack when the user's accessibility font size is at least this
+   * multiplier, whatever the width — large text rarely fits side by side.
+   *
+   * stackAtFontScale={1.3}
+   *
+   * Off by default.
+   */
+  stackAtFontScale?: number;
 
   /**
    * Horizontal (or, once stacked, vertical) gap between children.
@@ -46,6 +66,8 @@ type ResponsiveRowProps = ViewProps & {
 export function ResponsiveRow({
   children,
   stackOnSmall = true,
+  stackBelow,
+  stackAtFontScale,
   gap,
   measureContainer = true,
   style,
@@ -68,8 +90,9 @@ export function ResponsiveRow({
 
   const isStacked = shouldStackRow(
     width,
-    layout.breakpoints.smallPhone,
+    stackBelow ?? layout.breakpoints.smallPhone,
     stackOnSmall,
+    { current: layout.fontScale, stackAt: stackAtFontScale },
   );
 
   return (

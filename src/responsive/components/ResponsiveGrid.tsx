@@ -3,7 +3,11 @@ import { View, type ViewProps } from "react-native";
 
 import { useResponsive } from "../hooks/useResponsive";
 import { useContainerWidth } from "../hooks/useContainerWidth";
-import { computeGridLayout, responsiveValue } from "../utils";
+import {
+  computeGridLayout,
+  computeGridPlaceholderCount,
+  responsiveValue,
+} from "../utils";
 import type { ResponsiveValues } from "../types";
 
 type ResponsiveGridProps = ViewProps & {
@@ -126,13 +130,14 @@ export function ResponsiveGrid({
   ...props
 }: ResponsiveGridProps) {
   /**
-   * We initially use the device/window width.
+   * Auto-fit needs the width actually available to the grid. We start from
+   * the window width and switch to the real container width once the grid
+   * has been laid out (padded parent, drawer, modal, split view, etc.).
    *
-   * Once the grid has actually been laid out, we replace
-   * this with the real container width.
-   *
-   * This is important when ResponsiveGrid is inside a
-   * padded parent, drawer, modal, split view, etc.
+   * Nothing else depends on the measurement: cell widths come from flexbox
+   * (see below), and per-breakpoint `columns` / `itemHeight` maps follow the
+   * screen breakpoint like every other responsive value. So with explicit
+   * `columns` the very first frame is already correct.
    */
   const { width: screenWidth, breakpoints } = useResponsive();
 
@@ -208,10 +213,12 @@ export function ResponsiveGrid({
    *    least 'minItemWidth' can fit in the available width, then clamps
    *    that to ['minColumns', 'maxColumns'].
    */
-  const { numColumns: columns, itemWidth: cellWidth } = useMemo(
+  const { numColumns: columns } = useMemo(
     () =>
       computeGridLayout({
-        width,
+        // Explicit columns only need the breakpoint tier: use the screen
+        // width so they never wait on (or jump after) measurement.
+        width: columnsProp !== undefined ? screenWidth : width,
         columns: columnsProp,
         minItemWidth,
         gap,
@@ -219,23 +226,17 @@ export function ResponsiveGrid({
         maxColumns,
         breakpoints,
       }),
-    [columnsProp, width, breakpoints, minItemWidth, gap, minColumns, maxColumns],
+    [
+      columnsProp,
+      screenWidth,
+      width,
+      breakpoints,
+      minItemWidth,
+      gap,
+      minColumns,
+      maxColumns,
+    ],
   );
-
-  /**
-   * Cell sizing, without sub-pixel wrapping:
-   *
-   * width = 393, columns = 2, gap = 12
-   * cellWidth = (393 - 12) / 2 = 190.5
-   *
-   * Setting `width: 190.5` on every cell can overflow the line by a rounding
-   * error and wrap the last cell. Instead each cell starts from a basis a
-   * little BELOW the exact width (so exactly `columns` cells always fit on a
-   * line), then flex-grows into the leftover space, capped at the exact
-   * width by `maxWidth`. Full rows land flush with both edges; cells on a
-   * short last row keep the same width as everyone else.
-   */
-  const cellBasis = Math.max(0, Math.floor(cellWidth) - 1);
 
   /**
    * Resolve the actual height when itemHeight is supplied.
@@ -265,8 +266,8 @@ export function ResponsiveGrid({
       return itemHeight;
     }
 
-    return responsiveValue(width, itemHeight, undefined, breakpoints);
-  }, [width, itemHeight, breakpoints]);
+    return responsiveValue(screenWidth, itemHeight, undefined, breakpoints);
+  }, [screenWidth, itemHeight, breakpoints]);
 
   /**
    * Remove null/false/non-element children so that
@@ -280,14 +281,7 @@ export function ResponsiveGrid({
   const childCount = validChildren.length;
 
   /**
-   * Determine whether the final row has fewer items
-   * than the calculated number of columns.
-   */
-  const isIncompleteLastRow =
-    columns > 0 && childCount > 0 && childCount % columns !== 0;
-
-  /**
-   * Find the index at which the final row starts.
+   * Empty cells needed to complete a short last row.
    *
    * Example:
    *
@@ -295,12 +289,15 @@ export function ResponsiveGrid({
    * 6 items
    *
    * Row 1: 0 1 2 3
-   * Row 2: 4 5
+   * Row 2: 4 5 _ _
    *
-   * lastRowStart = 4
+   * placeholderCount = 2 (0 when stretchLastRow, so 4 and 5 share the row)
    */
-  const lastRowStart =
-    columns > 0 ? Math.floor((childCount - 1) / columns) * columns : 0;
+  const placeholderCount = computeGridPlaceholderCount(
+    childCount,
+    columns,
+    stretchLastRow,
+  );
 
   /**
    * These booleans make the cell geometry easier
@@ -310,6 +307,78 @@ export function ResponsiveGrid({
   const hasExplicitHeight = resolvedItemHeight !== undefined;
 
   const hasAspectRatio = !hasExplicitHeight && aspectRatio !== undefined;
+
+  /**
+   * Cell sizing is pure flexbox, so it needs no pixel math:
+   *
+   * Every cell starts from the same tiny basis and grows equally, so each
+   * row splits its width exactly between its cells — no rounding, no
+   * sub-pixel overflow wrapping the last cell. A full-width "row break"
+   * after every `columns` cells guarantees exactly `columns` cells per row,
+   * and placeholder cells keep a short last row's cells the same width as
+   * everyone else's.
+   */
+  const cellStyle = useMemo(
+    () => ({
+      flexBasis: 1,
+
+      flexGrow: 1,
+
+      flexShrink: 0,
+
+      /**
+       * Stretch to the row's height, except with aspectRatio:
+       * Yoga resolves a stretched + flex-grown cell's aspect
+       * ratio to a height of 0, so let it size itself instead.
+       */
+      alignSelf: hasAspectRatio ? ("flex-start" as const) : ("stretch" as const),
+
+      /**
+       * Explicit height takes priority.
+       */
+      ...(hasExplicitHeight && {
+        height: resolvedItemHeight,
+      }),
+
+      /**
+       * Aspect ratio is used only when
+       * explicit height isn't supplied.
+       */
+      ...(hasAspectRatio && {
+        aspectRatio,
+      }),
+    }),
+    [hasAspectRatio, hasExplicitHeight, resolvedItemHeight, aspectRatio],
+  );
+
+  /**
+   * The row break doubles as the vertical gap: the container's rowGap is 0,
+   * and the break's height is the gap between two rows.
+   */
+  const rowBreakStyle = useMemo(
+    () => ({ flexBasis: "100%" as const, height: gap }),
+    [gap],
+  );
+
+  const cells: React.ReactNode[] = [];
+
+  validChildren.forEach((child, index) => {
+    if (index > 0 && index % columns === 0) {
+      cells.push(<View key={`row-break-${index}`} style={rowBreakStyle} />);
+    }
+
+    cells.push(
+      <View key={child.key ?? index} style={cellStyle}>
+        {child}
+      </View>,
+    );
+  });
+
+  for (let i = 0; i < placeholderCount; i++) {
+    cells.push(
+      <View key={`placeholder-${i}`} style={cellStyle} pointerEvents="none" />,
+    );
+  }
 
   return (
     <View
@@ -322,69 +391,19 @@ export function ResponsiveGrid({
           flexWrap: "wrap",
 
           /**
-           * Native gap handles spacing between cells.
+           * Native gap handles spacing between cells; row breaks
+           * handle spacing between rows.
            *
            * No negative margins.
            * No padding hacks.
            */
           columnGap: gap,
-          rowGap: gap,
+          rowGap: 0,
         },
         style,
       ]}
     >
-      {validChildren.map((child, index) => {
-        const isLastRow = index >= lastRowStart;
-
-        const shouldGrow = stretchLastRow && isIncompleteLastRow && isLastRow;
-
-        return (
-          <View
-            key={child.key ?? index}
-            style={{
-              flexBasis: cellBasis,
-
-              flexGrow: 1,
-
-              /**
-               * Cap at the exact cell width. Dropped for a short last row
-               * when stretchLastRow is on, so those cells share the row.
-               */
-              maxWidth: shouldGrow ? undefined : cellWidth,
-
-              /**
-               * Prevent cells from shrinking below
-               * their calculated geometry.
-               */
-              flexShrink: 0,
-
-              /**
-               * Stretch to the row's height, except with aspectRatio:
-               * Yoga resolves a stretched + flex-grown cell's aspect
-               * ratio to a height of 0, so let it size itself instead.
-               */
-              alignSelf: hasAspectRatio ? "flex-start" : "stretch",
-
-              /**
-               * Explicit height takes priority.
-               */
-              ...(hasExplicitHeight && {
-                height: resolvedItemHeight,
-              }),
-
-              /**
-               * Aspect ratio is used only when
-               * explicit height isn't supplied.
-               */
-              ...(hasAspectRatio && {
-                aspectRatio,
-              }),
-            }}
-          >
-            {child}
-          </View>
-        );
-      })}
+      {cells}
     </View>
   );
 }

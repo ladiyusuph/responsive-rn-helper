@@ -24,7 +24,8 @@ export function ResponsiveDebugOverlay({
   forceShow = false,
 }: ResponsiveDebugOverlayProps) {
   const [expanded, setExpanded] = useState(false);
-  const { width, height, deviceType, isLandscape, breakpoints } = useResponsive();
+  const { width, height, deviceType, formFactor, fontScale, isLandscape, breakpoints } =
+    useResponsive();
 
   const isDev = typeof __DEV__ !== "undefined" && __DEV__;
   if (!isDev && !forceShow) return null;
@@ -41,6 +42,8 @@ export function ResponsiveDebugOverlay({
             <Text style={styles.detailText}>phone &lt; {breakpoints.phone}</Text>
             <Text style={styles.detailText}>tablet &lt; {breakpoints.tablet}</Text>
             <Text style={styles.detailText}>large-tablet ≥ {breakpoints.tablet}</Text>
+            <Text style={styles.detailText}>form factor: {formFactor}</Text>
+            <Text style={styles.detailText}>font scale: {fontScale}</Text>
           </View>
         )}
       </Pressable>

@@ -22,4 +22,28 @@ describe("shouldStackRow", () => {
     const narrowSidebarWidth = 280;
     expect(shouldStackRow(narrowSidebarWidth, smallPhoneBreakpoint, true)).toBe(true);
   });
+
+  it("uses a custom stackBelow width in place of the breakpoint", () => {
+    expect(shouldStackRow(400, 480, true)).toBe(true);
+    expect(shouldStackRow(480, 480, true)).toBe(false);
+  });
+
+  it("stacks at a large accessibility font scale even when wide", () => {
+    expect(
+      shouldStackRow(800, smallPhoneBreakpoint, true, { current: 1.5, stackAt: 1.3 }),
+    ).toBe(true);
+    expect(
+      shouldStackRow(800, smallPhoneBreakpoint, true, { current: 1.0, stackAt: 1.3 }),
+    ).toBe(false);
+  });
+
+  it("ignores font scale when stackAt isn't set", () => {
+    expect(shouldStackRow(800, smallPhoneBreakpoint, true, { current: 3 })).toBe(false);
+  });
+
+  it("never stacks for font scale when stackOnSmall is false", () => {
+    expect(
+      shouldStackRow(800, smallPhoneBreakpoint, false, { current: 2, stackAt: 1.3 }),
+    ).toBe(false);
+  });
 });

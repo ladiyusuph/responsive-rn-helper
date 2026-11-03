@@ -380,6 +380,23 @@ By default the row stacks when **its own measured width** is narrower than the `
 
 Because it measures itself, a row inside a narrow sidebar or modal stacks even on a tablet. Pass `measureContainer={false}` to use the window width instead.
 
+Choose your own threshold with `stackBelow`, and stack for large accessibility text with `stackAtFontScale`:
+
+```tsx
+<ResponsiveRow stackBelow={480} stackAtFontScale={1.3}>
+  <Button title="Cancel" />
+  <Button title="Continue" />
+</ResponsiveRow>
+```
+
+| Prop               | Default             | Description                                              |
+| ------------------ | ------------------- | -------------------------------------------------------- |
+| `stackBelow`       | `smallPhone` (320)  | Width below which the row stacks                         |
+| `stackAtFontScale` | —                   | Also stack when the user's font scale is at least this   |
+| `stackOnSmall`     | `true`              | Set to `false` to never stack                            |
+| `measureContainer` | `true`              | Measure the row's own width instead of the window width  |
+| `gap`              | layout `gap` token  | Space between children                                   |
+
 ---
 
 # ResponsiveGrid
@@ -647,6 +664,7 @@ This is useful for dashboard layouts where the final row should consume the avai
 
 | Prop             | Default | Description                                 |
 | ---------------- | ------: | ------------------------------------------- |
+| `columns`        |       — | Exact column count (number or per-breakpoint); disables auto-fit |
 | `minItemWidth`   |   `160` | Minimum desired width of each item          |
 | `gap`            |    `12` | Horizontal and vertical space between items |
 | `minColumns`     |     `1` | Minimum number of columns                   |
@@ -655,7 +673,25 @@ This is useful for dashboard layouts where the final row should consume the avai
 | `aspectRatio`    |       — | Width-to-height ratio for each item         |
 | `stretchLastRow` | `false` | Expands items on an incomplete final row    |
 
-> **Important:** `ResponsiveGrid` calculates its geometry from the actual width available to the grid, not simply the device screen width.
+> **Important:** in auto-fit mode, `ResponsiveGrid` calculates its column count from the actual width available to the grid, not simply the device screen width. Cell widths come from flexbox, so every row fills the grid exactly — no sub-pixel gaps or unexpected wrapping.
+
+---
+
+## Explicit columns
+
+Pass `columns` when you want a fixed column count instead of auto-fit:
+
+```tsx
+<ResponsiveGrid columns={2}>...</ResponsiveGrid>
+
+<ResponsiveGrid columns={{ small: 1, phone: 2, tablet: 3, largeTablet: 4 }}>
+  ...
+</ResponsiveGrid>
+```
+
+Per-breakpoint `columns` (and `itemHeight`) follow the **screen** breakpoint, like every other responsive value. Because explicit columns don't depend on measuring the container, the grid is laid out correctly on the very first frame. In auto-fit mode the first frame uses the window width, and the grid settles once its container has been measured.
+
+`minItemWidth`, `minColumns` and `maxColumns` are ignored when `columns` is set.
 
 ---
 

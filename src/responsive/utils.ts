@@ -289,6 +289,21 @@ export function normalizeColumnCount(value: number): number {
   return Math.max(1, Math.round(value));
 }
 
+/**
+ * Pure count of the empty cells ResponsiveGrid appends to a short last row,
+ * so its items keep the same width as items in full rows. Zero when
+ * `stretchLastRow` is on — the last row's items share the row instead.
+ */
+export function computeGridPlaceholderCount(
+  childCount: number,
+  columns: number,
+  stretchLastRow: boolean,
+): number {
+  if (stretchLastRow || childCount <= 0 || columns <= 0) return 0;
+
+  return (columns - (childCount % columns)) % columns;
+}
+
 export type GridLayoutOptions = {
   /** Width available to the grid (measured container width, ideally). */
   width: number;
@@ -350,10 +365,17 @@ export function computeGridLayout({
  */
 export function shouldStackRow(
   width: number,
-  smallPhoneBreakpoint: number,
+  stackBelowWidth: number,
   stackOnSmall: boolean,
+  fontScale?: { current: number; stackAt?: number },
 ): boolean {
-  return stackOnSmall && width < smallPhoneBreakpoint;
+  if (!stackOnSmall) return false;
+
+  if (fontScale?.stackAt !== undefined && fontScale.current >= fontScale.stackAt) {
+    return true;
+  }
+
+  return width < stackBelowWidth;
 }
 /**
  * Smooth CSS clamp()-style interpolation: `minValue` at `minWidth` and below,
